@@ -7,6 +7,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -19,13 +22,15 @@ jobs:
           channel: stable
           cache: true
       - name: Build staff app
-        run: tools/ci_build.sh app ug_app com.underground.staff "UNDERGROUND Staff" UNDERGROUND-Staff.apk
+        run: tools/ci_build.sh app ug_app com.underground.staff "UNDERGROUND Staff" UNDERGROUND-Staff.apk version.json
       - name: Build customer app
-        run: tools/ci_build.sh customer_app ug_member com.underground.member "UNDERGROUND" UNDERGROUND-Member.apk
+        run: tools/ci_build.sh customer_app ug_member com.underground.member "UNDERGROUND" UNDERGROUND-Member.apk member-version.json
       - uses: actions/upload-artifact@v4
         with:
           name: UNDERGROUND-apks
-          path: dist/*.apk
+          path: |
+            dist/*.apk
+            dist/*.json
           retention-days: 30
       - name: Publish to a Release (download link)
         uses: softprops/action-gh-release@v2
@@ -33,3 +38,11 @@ jobs:
           tag_name: latest
           name: Latest APKs
           files: dist/*.apk
+      - name: Publish to UNDERGROUND servers (in-app update)
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
+        run: |
+          cd dist
+          npx --yes wrangler@3 r2 object put ug-apk/UNDERGROUND.apk --file UNDERGROUND-Staff.apk --content-type application/vnd.android.package-archive --remote
+          npx --yes wrangler@3 r2 object put ug-apk/UNDERGROUND-Member.apk --file UNDERGROUND-Member.apk --content-type application/vnd.android.package-archive --remote
+          npx --yes wrangler@3 r2 object put ug-apk/version.json --file version.json --content-type application/json --remote
+          npx --yes wrangler@3 r2 object put ug-apk/member-version.json --file member-version.json --content-type application/json --remote

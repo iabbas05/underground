@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Usage: tools/ci_build.sh <src_dir: app|customer_app> <project_name> <application_id> <label> <out_apk>
 set -euo pipefail
-SRC="$1"; NAME="$2"; APPID="$3"; LABEL="$4"; OUT="$5"
+SRC="$1"; NAME="$2"; APPID="$3"; LABEL="$4"; OUT="$5"; VJ="${6:-version.json}"
+BUILD="${BUILD:-$(date +%y%m%d%H)}"
 ROOT="$(pwd)"
 rm -rf "build_$NAME"; mkdir -p "build_$NAME"; cd "build_$NAME"
 flutter create --org com.underground --project-name "$NAME" "$NAME"
@@ -26,8 +27,10 @@ if 'EnableImpeller' not in s:
 open(m, 'w').write(s)
 PY
 grep -n "applicationId" android/app/build.gradle* || true
+echo "const int appBuild = $BUILD;" > lib/build_info.dart
 flutter pub get
 flutter build apk --release
 mkdir -p "$ROOT/dist"
 cp build/app/outputs/flutter-apk/app-release.apk "$ROOT/dist/$OUT"
+echo "{\"build\":$BUILD,\"notes\":\"${NOTES:-}\"}" > "$ROOT/dist/$VJ"
 echo "PACKAGE ID: $APPID  ->  dist/$OUT"
