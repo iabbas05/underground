@@ -76,3 +76,14 @@ jobs:
         with:
           name: smoke-results
           path: smoke/
+      - name: Publish smoke results to a branch (readable without downloads)
+        if: always()
+        run: |
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          rm -rf /tmp/res && mkdir /tmp/res && cp -r smoke/. /tmp/res/ 2>/dev/null || true
+          git checkout --orphan smoke-results
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -r /tmp/res/. .
+          git add -A
+          git commit -m "smoke results" || true
+          git push -f origin smoke-results
