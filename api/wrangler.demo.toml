@@ -1,0 +1,17 @@
+# Separate demo copy: own database (ug-demo), own address. Fake data only.
+name = "ug-demo-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+routes = [
+  { pattern = "demo.gossipbh.com", custom_domain = true }
+]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ug-demo"
+database_id = "REPLACE_WITH_YOUR_D1_ID"

@@ -1,0 +1,27 @@
+name = "ug-admin-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+# Own domain (zone gossipbh.com is in your Cloudflare account). DNS + SSL are created automatically on deploy.
+routes = [
+  { pattern = "admin.gossipbh.com", custom_domain = true }
+]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ug-admin"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+
+# R2-BEGIN (app updates; the scripts remove this block if R2 is not enabled on the account)
+[[r2_buckets]]
+binding = "APK"
+bucket_name = "ug-apk"
+# R2-END
+
+# Secrets (set once, never commit them):
+#   npx wrangler secret put JWT_SECRET   -> any long random text
+#   npx wrangler secret put SETUP_KEY    -> one-time key to create the first admin

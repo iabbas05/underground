@@ -1,0 +1,35 @@
+name: Build UNDERGROUND apps
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+      - name: Build staff app
+        run: tools/ci_build.sh app ug_app com.underground.staff "UNDERGROUND Staff" UNDERGROUND-Staff.apk
+      - name: Build customer app
+        run: tools/ci_build.sh customer_app ug_member com.underground.member "UNDERGROUND" UNDERGROUND-Member.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UNDERGROUND-apks
+          path: dist/*.apk
+          retention-days: 30
+      - name: Publish to a Release (download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest APKs
+          files: dist/*.apk

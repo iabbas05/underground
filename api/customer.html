@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#0a090e">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UNDERGROUND">
+<link rel="manifest" id="mf"><link rel="apple-touch-icon" href="/icon.png">
+<title>UNDERGROUND</title>
+<style>
+:root{--bg:#0a090e;--panel:#14121b;--line:#2b2738;--text:#f4f2f8;--mute:#a29cb4;--v:#8a4dff;--vs:#b79bff;--ok:#34d399;--warn:#fbbf24;--bad:#f87171}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,#2a1659,var(--bg) 60%);color:var(--text);font:16px/1.5 system-ui,"Segoe UI",Tahoma,sans-serif;display:flex;justify-content:center}
+.app{width:100%;max-width:420px;padding:18px 18px 96px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.brand{letter-spacing:4px;font-weight:900;font-size:20px}.sub{color:var(--vs);letter-spacing:3px;font-size:10px}
+.lang{background:none;border:1px solid var(--line);color:var(--text);border-radius:20px;padding:4px 12px;font-size:13px;cursor:pointer}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;margin-top:16px;text-align:center}
+.qr{background:#fff;border-radius:18px;padding:14px;display:inline-block;margin:6px 0}.qr svg{display:block;width:230px;height:230px}
+.name{font-size:22px;font-weight:800;margin-top:10px}.plan{color:var(--mute);font-size:14px}
+.pill{display:inline-block;margin-top:10px;padding:4px 14px;border-radius:20px;font-weight:700;font-size:13px}
+.active{background:#34d3991f;color:var(--ok)}.expiring{background:#fbbf241f;color:var(--warn)}.expired,.blocked{background:#f871711f;color:var(--bad)}
+.bar{height:5px;background:var(--line);border-radius:5px;margin:14px 20px 4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--v);width:100%;transition:width 1s linear}
+small,.mute{color:var(--mute)}
+a.btn{display:block;margin-top:16px;background:#000;border:1px solid #444;color:#fff;border-radius:14px;padding:12px;text-decoration:none;font-weight:700}
+.err{color:var(--bad)}
+.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);text-align:start}.row:last-child{border:0}
+.big{font-size:56px;font-weight:900;line-height:1;color:var(--vs)}
+.seg{display:flex;gap:8px;justify-content:center;margin:4px 0 12px}.seg button{flex:1;background:none;border:1px solid var(--line);color:var(--mute);border-radius:12px;padding:8px;font-size:14px;cursor:pointer}.seg button.on{background:var(--v);border-color:var(--v);color:#fff}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}.days button{flex:0 0 auto;background:none;border:1px solid var(--line);color:var(--mute);border-radius:12px;padding:6px 12px;font-size:13px;cursor:pointer}.days button.on{border-color:var(--vs);color:var(--text)}
+.slot{display:flex;justify-content:space-between;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:14px;margin-top:8px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:#0a090ef0;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav div{display:flex;width:100%;max-width:420px}nav button{flex:1;background:none;border:0;color:var(--mute);padding:14px 4px;font-size:14px;cursor:pointer}nav button.on{color:var(--vs);font-weight:700}
+.slot .go{border:0;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;background:var(--v);color:#fff}.slot .go.alt{background:none;border:1px solid var(--line);color:var(--text)}.slot .go.dis{opacity:.45;cursor:default}.slot{align-items:center;gap:10px;flex-wrap:wrap}.banner{background:#f871711f;color:var(--bad);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-size:14px}.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1b1825;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:9;max-width:90%}.nt{text-align:start;padding:12px 0;border-bottom:1px solid var(--line)}.nt.un b{color:var(--vs)}.hint{margin-top:16px;font-size:13px;color:var(--mute);text-align:center}
+</style></head><body>
+<div class="app">
+  <div class="top"><div><div class="brand">UNDERGROUND</div><div class="sub">STRENGTH &amp; CONDITIONING</div></div><div style="display:flex;gap:8px"><button class="lang" id="bell" style="position:relative">🔔<b id="bn" style="display:none;position:absolute;top:-6px;inset-inline-end:-6px;background:var(--bad);color:#fff;border-radius:10px;font-size:11px;padding:0 6px"></b></button><button class="lang" id="lang"></button></div></div>
+  <div id="v"></div>
+</div>
+<nav><div id="nav"></div></nav>
+<script>__QR_LIB__</script>
+<script>
+const token=location.pathname.split('/').pop();
+document.getElementById('mf').href='/mf/'+token;
+const T={
+ ar:{pass:'البطاقة',me:'اشتراكي',cls:'الحصص',scan:'يتجدد الرمز تلقائياً · امسحه عند البوابة',wallet:'إضافة إلى Apple Wallet',ends:'ينتهي',left:'يوم متبقي',plan:'الباقة',branch:'الفرع',start:'ينتهي في',
+  active:'اشتراك فعّال',expiring:'ينتهي قريباً',expired:'منتهي',blocked:'موقوف',noacc:'لا يمكن الدخول بهذه البطاقة',bad:'البطاقة غير صالحة أو تم تحديثها. اطلب رابطاً جديداً من الموظف.',
+  men:'رجال',ladies:'سيدات',rest:'الجمعة يوم راحة',none:'لا توجد حصص',ba:'مبتدئين ومتقدمين',beast:'بيست',renew:'للتجديد، زر فرعك أو تواصل مع الموظف.',loading:'جاري التحميل...',
+  today:'اليوم',tomorrow:'غداً',book:'احجز',waitjoin:'قائمة الانتظار',full:'مكتمل',free:'متاح',cancel:'إلغاء الحجز',booked:'تم الحجز',onwait:'في قائمة الانتظار',accept:'تأكيد',decline:'رفض',closed:'انتهى التسجيل',attended:'حضرت',noshow:'غياب',toolate:'الإلغاء قبل ساعة على الأقل',paused:'الحجز موقوف حتى',strikes:'إلغاءات متتالية',left_min:'متبقي',bell:'الإشعارات',nonotif:'لا توجد إشعارات',wait_n:'بالانتظار',seatof:'مقعد',
+  days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],install:'لتثبيته: أضف هذه الصفحة إلى الشاشة الرئيسية من قائمة المتصفح.',other:'EN'},
+ en:{pass:'Pass',me:'Membership',cls:'Classes',scan:'Code refreshes automatically · scan it at the gate',wallet:'Add to Apple Wallet',ends:'Ends',left:'days left',plan:'Plan',branch:'Branch',start:'Ends on',
+  active:'Active',expiring:'Ending soon',expired:'Expired',blocked:'Blocked',noacc:'This pass cannot enter',bad:'This pass is invalid or was replaced. Ask staff for a new link.',
+  men:'Men',ladies:'Ladies',rest:'Friday is a rest day',none:'No classes',ba:'Beginners & advanced',beast:'Beast',renew:'To renew, visit your branch or ask the staff.',loading:'Loading...',
+  today:'Today',tomorrow:'Tomorrow',book:'Book',waitjoin:'Join waitlist',full:'Full',free:'free',cancel:'Cancel booking',booked:'Booked',onwait:'On the waitlist',accept:'Confirm',decline:'Decline',closed:'Closed',attended:'Attended',noshow:'No-show',toolate:'Cancel at least 1 hour before',paused:'Booking paused until',strikes:'cancellations in a row',left_min:'left',bell:'Notifications',nonotif:'No notifications',wait_n:'waiting',seatof:'seat',
+  days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],install:'To install: add this page to your home screen from the browser menu.',other:'عربي'}
+};
+let L='ar',tab='pass',D=null,aud='men',day=new Date(Date.now()+3*36e5).getUTCDay(),left=0,timer,BK=null,NT={unread:0,items:[]},dsel=0,toast='';
+try{L=localStorage.getItem('l')||'ar';aud=localStorage.getItem('a')||'men'}catch(e){}
+const t=k=>T[L][k];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function qr(text){const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:0,scalable:true})}
+function chrome(){
+  document.documentElement.lang=L;document.documentElement.dir=L==='ar'?'rtl':'ltr';
+  document.getElementById('lang').textContent=t('other');
+  document.getElementById('nav').innerHTML=['pass','me','cls'].map(k=>'<button class="'+(tab===k?'on':'')+'" data-t="'+k+'">'+t(k)+'</button>').join('');
+}
+function ok(){return D&&(D.status==='active'||D.status==='expiring')}
+function render(){
+  chrome();const v=document.getElementById('v');
+  if(!D){v.innerHTML='<div class="card mute">'+t('loading')+'</div>';return}
+  if(D.error){v.innerHTML='<div class="card err">'+t('bad')+'</div>';return}
+  const pill='<span class="pill '+D.status+'">'+t(D.status)+'</span>';
+  const pl=esc((L==='ar'?(D.plan_ar||D.plan):D.plan)||'');
+  if(tab==='pass'){
+    v.innerHTML='<div class="card">'+(ok()?'<div class="qr">'+qr(D.code)+'</div><div class="bar"><i id="p"></i></div><small>'+t('scan')+'</small>':'<div class="err" style="padding:40px 0">'+t('noacc')+'</div>')+
+      '<div class="name">'+esc(D.name)+'</div><div class="plan">'+pl+(D.branch?' · '+esc(L==='ar'?(D.branch_ar||D.branch):D.branch):'')+'</div>'+pill+
+      '<a class="btn" href="/api/pass/'+token+'/pkpass"> '+t('wallet')+'</a></div><div class="hint">'+t('install')+'</div>';
+    tick(30);
+  }else if(tab==='me'){
+    const dl=Math.max(D.days_left,0);
+    v.innerHTML='<div class="card"><div class="big">'+dl+'</div><div class="mute">'+t('left')+'</div>'+pill+'</div>'+
+      '<div class="card" style="padding:8px 20px"><div class="row"><span class="mute">'+t('plan')+'</span><b>'+pl+'</b></div><div class="row"><span class="mute">'+t('branch')+'</span><b>'+esc((L==='ar'?(D.branch_ar||D.branch):D.branch)||'')+'</b></div><div class="row"><span class="mute">'+t('start')+'</span><b>'+esc(D.end_date)+'</b></div></div>'+
+      '<div class="hint">'+t('renew')+'</div>';
+  }else if(tab==='nt'){
+    v.innerHTML='<div class="card" style="padding:8px 20px"><div class="mute" style="padding:8px 0;font-weight:700">'+t('bell')+'</div>'+(NT.items.length?NT.items.map(n=>'<div class="nt '+(n.read_at?'':'un')+'"><b>'+esc(L==='ar'?n.title_ar:n.title_en)+'</b><div class="mute" style="font-size:14px">'+esc(L==='ar'?n.body_ar:n.body_en)+'</div></div>').join(''):'<div class="mute" style="padding:16px">'+t('nonotif')+'</div>')+'</div>';
+  }else{
+    let h='';
+    if(BK&&BK.ban_until)h+='<div class="banner">'+t('paused')+' '+esc(BK.ban_until)+'</div>';
+    else if(BK&&BK.strikes>0)h+='<div class="hint" style="margin:0 0 8px">'+BK.strikes+'/'+BK.max_strikes+' '+t('strikes')+'</div>';
+    h+='<div class="card"><div class="seg"><button data-a="men" class="'+(aud==='men'?'on':'')+'">'+t('men')+'</button><button data-a="ladies" class="'+(aud==='ladies'?'on':'')+'">'+t('ladies')+'</button></div>'+
+      '<div class="seg"><button data-ds="0" class="'+(dsel===0?'on':'')+'">'+t('today')+'</button><button data-ds="1" class="'+(dsel===1?'on':'')+'">'+t('tomorrow')+'</button></div><div id="sl"></div></div>';
+    v.innerHTML=h;slots();
+  }
+}
+function minLeft(iso){const ms=Date.parse(iso.replace(' ','T')+'Z')-(Date.now()+3*36e5);return Math.max(Math.ceil(ms/6e4),0)}
+function slots(){
+  const el=document.getElementById('sl');if(!el)return;
+  if(!BK){el.innerHTML='<div class="mute">'+t('loading')+'</div>';return}
+  const dd=BK.dates[dsel];
+  if(dd.rest){el.innerHTML='<div class="mute" style="padding:16px">'+t('rest')+'</div>';return}
+  const rows=dd.items.filter(r=>r.audience===aud);
+  if(!rows.length){el.innerHTML='<div class="mute" style="padding:16px">'+t('none')+'</div>';return}
+  el.innerHTML=rows.map(r=>{
+    const info='<div style="text-align:start"><b dir="ltr">'+esc(r.time)+'</b> <span class="mute">'+t(r.level)+'</span><div class="mute" style="font-size:12px">'+(r.full?t('full')+(r.waitlist?' · '+r.waitlist+' '+t('wait_n'):''):r.free+'/'+r.capacity+' '+t('free'))+'</div></div>';
+    const k='data-s="'+r.schedule_id+'" data-dt="'+dd.date+'"';let act='';
+    if(r.my_status==='booked')act='<span class="pill active">'+t('booked')+'</span>'+(r.can_cancel?'<button class="go alt" data-c="'+r.my_booking_id+'">'+t('cancel')+'</button>':'<small>'+t('toolate')+'</small>');
+    else if(r.my_status==='waitlist')act='<span class="pill expiring">'+t('onwait')+'</span><button class="go alt" data-c="'+r.my_booking_id+'">'+t('cancel')+'</button>';
+    else if(r.my_status==='offered')act='<span class="pill active">'+t('free').toUpperCase()+' · '+minLeft(r.offer_expires_at)+'m</span><button class="go" data-o="1" data-b="'+r.my_booking_id+'">'+t('accept')+'</button><button class="go alt" data-o="0" data-b="'+r.my_booking_id+'">'+t('decline')+'</button>';
+    else if(r.my_status==='attended')act='<span class="pill active">'+t('attended')+'</span>';
+    else if(r.closed)act='<small>'+t('closed')+'</small>';
+    else if(BK.ban_until)act='';
+    else act='<button class="go '+(r.full?'alt':'')+'" '+k+'>'+(r.full?t('waitjoin'):t('book'))+'</button>';
+    return '<div class="slot">'+info+'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+act+'</div></div>';
+  }).join('');
+}
+function tick(total){clearInterval(timer);const p=()=>{const e=document.getElementById('p');if(e)e.style.width=(Math.max(left,0)/total*100)+'%'};p();
+  timer=setInterval(()=>{left--;p();if(left<=0){clearInterval(timer);load()}},1000)}
+async function load(){
+  try{const r=await fetch('/api/pass/'+token);const d=await r.json();D=r.ok?d:{error:1};if(r.ok)left=d.seconds_left}catch(e){D=D||{error:1}}
+  if(tab==='pass'||!D||D.error)render();
+}
+async function api(path,body){const r=await fetch('/api/pass/'+token+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});let d=null;try{d=await r.json()}catch(e){}return {ok:r.ok,data:d}}
+function say(m){toast=m;const e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3200)}
+async function loadBooking(){const r=await api('/booking');if(r.ok){BK=r.data;if(tab==='cls')slots()}}
+async function loadNotes(){const r=await api('/notifications');if(r.ok){NT=r.data;const b=document.getElementById('bn');if(b){b.textContent=NT.unread;b.style.display=NT.unread?'block':'none'}}}
+async function act(path,body){const r=await api(path,body);if(!r.ok)say((r.data&&r.data.error)||'Error');await loadBooking();await loadNotes();return r}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.id==='lang'){L=L==='ar'?'en':'ar';try{localStorage.setItem('l',L)}catch(x){}render()}
+  else if(b.id==='bell'){tab='nt';render();await loadNotes();render();await api('/notifications/read',{});loadNotes()}
+  else if(b.dataset.t){tab=b.dataset.t;render();if(tab==='cls')loadBooking()}
+  else if(b.dataset.a){aud=b.dataset.a;try{localStorage.setItem('a',aud)}catch(x){}render()}
+  else if(b.dataset.ds){dsel=Number(b.dataset.ds);render()}
+  else if(b.dataset.s){b.disabled=true;await act('/book',{schedule_id:Number(b.dataset.s),date:b.dataset.dt})}
+  else if(b.dataset.c){await act('/cancel',{booking_id:Number(b.dataset.c)})}
+  else if(b.dataset.o){await act('/offer',{booking_id:Number(b.dataset.b),accept:b.dataset.o==='1'})}
+});
+setInterval(()=>{if(!document.hidden&&D&&!D.error){loadNotes();if(tab==='cls')loadBooking()}},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+render();load();loadNotes();
+</script></body></html>
