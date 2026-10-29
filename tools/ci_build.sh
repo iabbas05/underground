@@ -21,6 +21,9 @@ for f in glob.glob('android/app/build.gradle*'):
 m = 'android/app/src/main/AndroidManifest.xml'
 s = open(m).read()
 s = re.sub(r'android:label="[^"]*"', 'android:label="' + label + '"', s, count=1)
+for perm in ('INTERNET', 'CAMERA'):
+    if 'android.permission.' + perm not in s:
+        s = re.sub(r'(<manifest[^>]*>)', lambda m: m.group(1) + '\n    <uses-permission android:name="android.permission.' + perm + '"/>', s, count=1)
 meta = '<meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false"/>'
 if 'EnableImpeller' not in s:
     s = s.replace('</application>', '    ' + meta + '\n    </application>')
