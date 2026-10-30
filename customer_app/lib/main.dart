@@ -54,6 +54,7 @@ const _s = <String, Map<String, String>>{
     'closed': 'انتهى التسجيل', 'attended': 'حضرت', 'toolate': 'الإلغاء قبل ساعة على الأقل', 'paused': 'الحجز موقوف حتى',
     'strikes': 'إلغاءات متتالية', 'g_hint': 'للحجز وعرض بطاقتك سجّل الدخول', 'g_link': 'تسجيل الدخول', 'g_need': 'سجّل الدخول أولاً للحجز', 'g_classes': 'الحصص', 'g_info': 'الفروع', 'g_pass': 'بطاقتي', 'g_pass_body': 'اربط حسابك لعرض بطاقة الدخول والاشتراك.', 'g_branch': 'اختر الفرع', 'g_seats': 'مقعد متاح', 'back': 'رجوع', 'bell': 'الإشعارات', 'nonotif': 'لا توجد إشعارات', 'wait_n': 'بالانتظار', 'err': 'حدث خطأ',
     'acct': 'حسابي', 'login': 'تسجيل الدخول', 'signup': 'إنشاء حساب', 'username': 'اسم المستخدم', 'password': 'كلمة المرور (8 أحرف على الأقل)', 'fullname': 'الاسم', 'phone': 'رقم الهاتف', 'have_acc': 'عندي حساب', 'no_acc': 'ما عندي حساب', 'pending_msg': 'حسابك قيد المراجعة. إذا كنت مشتركاً، أدخل كود الربط من الموظف أو انتظر تفعيل الإدارة.', 'link_code': 'كود الربط من الموظف', 'send_code': 'إرسال الرمز', 'verify': 'تأكيد', 'email': 'البريد الإلكتروني', 'otp': 'رمز التحقق', 'email_ok': 'تم توثيق البريد', 'logout': 'تسجيل الخروج', 'sub_none': 'لا يوجد اشتراك مرتبط بهذا الحساب', 'sub_expired': 'اشتراكك منتهي', 'addr': 'العنوان', 'hours': 'ساعات العمل', 'call': 'اتصال', 'map': 'الخريطة', 'view_classes': 'عرض الحصص', 'done': 'تم',
+    'store': 'الماركت', 'cart': 'السلة', 'order_now': 'اطلب (الدفع عند الاستلام)', 'sold_out': 'نفدت الكمية', 'left_n': 'متبقي', 'goal_all': 'الكل', 'goal_muscle': 'بناء عضل', 'goal_cut': 'تنشيف', 'goal_light': 'خفيف', 'suggested': 'مقترح لك', 'cal': 'سعرة', 'prot': 'بروتين', 'my_orders': 'طلباتي', 'order_sent': 'تم إرسال الطلب، بانتظار موافقة الموظف. الدفع عند الاستلام.', 'st_pending': 'بانتظار الموافقة', 'st_approved': 'تمت الموافقة', 'st_ready': 'جاهز للاستلام', 'st_picked': 'تم الاستلام', 'st_rejected': 'مرفوض', 'st_cancelled': 'ملغي', 'need_login': 'سجّل الدخول أولاً للطلب', 'bd': 'د.ب', 'note': 'ملاحظة (اختياري)', 'empty_menu': 'لا توجد منتجات متاحة اليوم',
   },
   'en': {
     'pass': 'Pass', 'me': 'Membership', 'cls': 'Classes',
@@ -78,7 +79,8 @@ const _s = <String, Map<String, String>>{
     'cancel_booking': 'Cancel booking', 'booked': 'Booked', 'onwait': 'On the waitlist', 'accept': 'Confirm', 'decline': 'Decline',
     'closed': 'Closed', 'attended': 'Attended', 'toolate': 'Cancel at least 1 hour before', 'paused': 'Booking paused until',
     'strikes': 'cancellations in a row', 'bell': 'Notifications', 'nonotif': 'No notifications', 'wait_n': 'waiting', 'err': 'Something went wrong',
-    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
+    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today',
+ 'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
   },
 };
 String t(String k) => _s[lang.value]![k] ?? k;
@@ -424,13 +426,14 @@ class _GuestHomeState extends State<GuestHome> {
         title: const Text('UNDERGROUND', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 18)),
         actions: [IconButton(tooltip: t('acct'), icon: const Icon(Icons.account_circle_outlined), onPressed: toLink), TextButton(onPressed: () => setLang(lang.value == 'ar' ? 'en' : 'ar'), child: Text(t('lang')))],
       ),
-      body: tab == 0 ? classesView() : tab == 1 ? infoView() : passView(),
+      body: tab == 0 ? classesView() : tab == 1 ? const StoreScreen() : tab == 2 ? infoView() : passView(),
       bottomNavigationBar: NavigationBar(
         backgroundColor: _panel,
         selectedIndex: tab,
         onDestinationSelected: (i) => setState(() => tab = i),
         destinations: [
           NavigationDestination(icon: const Icon(Icons.fitness_center), label: t('g_classes')),
+          NavigationDestination(icon: const Icon(Icons.restaurant_menu), label: t('store')),
           NavigationDestination(icon: const Icon(Icons.place_outlined), label: t('g_info')),
           NavigationDestination(icon: const Icon(Icons.qr_code_2), label: t('g_pass')),
         ],
@@ -439,6 +442,211 @@ class _GuestHomeState extends State<GuestHome> {
   }
 }
 
+
+class StoreScreen extends StatefulWidget {
+  const StoreScreen({super.key});
+  @override
+  State<StoreScreen> createState() => _StoreScreenState();
+}
+
+class _StoreScreenState extends State<StoreScreen> {
+  List<dynamic> branches = [];
+  int? bid;
+  List<dynamic> items = [];
+  Set<int> suggested = {};
+  String goal = '';
+  final Map<int, int> cart = {};
+  List<dynamic> orders = [];
+  bool loading = true;
+  bool busy = false;
+  String? err;
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  Future<void> init() async {
+    try {
+      final r = await getJson('/api/public/branches');
+      branches = r['items'] as List<dynamic>;
+      if (branches.isNotEmpty) bid = (branches.first as Map)['id'] as int;
+      await loadMenu();
+      await loadOrders();
+    } catch (_) {
+      if (mounted) setState(() { err = t('net'); loading = false; });
+    }
+  }
+
+  Future<void> loadMenu() async {
+    if (bid == null) return;
+    setState(() => loading = true);
+    try {
+      final r = await getJson('/api/public/store?branch_id=$bid${goal.isEmpty ? '' : '&goal=$goal'}');
+      if (!mounted) return;
+      setState(() {
+        items = r['items'] as List<dynamic>;
+        suggested = (r['suggestions'] as List<dynamic>).map((e) => e as int).toSet();
+        err = null;
+        loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() { err = t('net'); loading = false; });
+    }
+  }
+
+  Future<void> loadOrders() async {
+    if (custToken == null) return;
+    try {
+      final r = await authCall('GET', '/api/customer/orders');
+      if (mounted) setState(() => orders = r['items'] as List<dynamic>);
+    } catch (_) {}
+  }
+
+  String bn(Map b) => lang.value == 'ar' ? ((b['name_ar'] ?? b['name']) as String) : (b['name'] as String);
+  double get total {
+    var sum = 0.0;
+    for (final e in cart.entries) {
+      final p = items.cast<Map>().firstWhere((x) => x['id'] == e.key, orElse: () => {});
+      if (p.isNotEmpty) sum += (p['price'] as num) * e.value;
+    }
+    return sum;
+  }
+
+  Future<void> order() async {
+    if (custToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('need_login'))));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      await authCall('POST', '/api/customer/orders', {
+        'branch_id': bid,
+        'items': [for (final e in cart.entries) {'product_id': e.key, 'qty': e.value}],
+      });
+      cart.clear();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('order_sent'))));
+      await loadMenu();
+      await loadOrders();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      await loadMenu();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Widget card(Map<String, dynamic> p) {
+    final ar = lang.value == 'ar';
+    final id = p['id'] as int;
+    final out = p['sold_out'] == true;
+    final q = cart[id] ?? 0;
+    final desc = ((ar ? (p['descr_ar'] ?? p['descr']) : (p['descr'] ?? p['descr_ar'])) ?? '').toString();
+    final avail = p['available'] as int;
+    return Card(
+      color: _panel,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Opacity(
+        opacity: out ? 0.5 : 1,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text((ar ? p['name_ar'] : p['name']).toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+              if (suggested.contains(id)) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _ok.withOpacity(0.18), borderRadius: BorderRadius.circular(10)), child: Text(t('suggested'), style: const TextStyle(color: _ok, fontSize: 11))),
+              const SizedBox(width: 8),
+              Text('${(p['price'] as num).toStringAsFixed(3)} ${t('bd')}', style: const TextStyle(color: _violetSoft, fontWeight: FontWeight.w800)),
+            ]),
+            if (desc.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(desc, style: const TextStyle(color: _mute, fontSize: 13))),
+            if (p['calories'] != null && (p['calories'] as num) > 0)
+              Padding(padding: const EdgeInsets.only(top: 6), child: Text('${p['calories']} ${t('cal')}  ·  ${p['protein']}g ${t('prot')}', style: const TextStyle(fontSize: 12))),
+            const SizedBox(height: 8),
+            Row(children: [
+              Text(out ? t('sold_out') : '$avail ${t('left_n')}', style: TextStyle(color: out ? _bad : _ok, fontSize: 12)),
+              const Spacer(),
+              if (!out) ...[
+                IconButton(onPressed: q > 0 ? () => setState(() { if (q == 1) { cart.remove(id); } else { cart[id] = q - 1; } }) : null, icon: const Icon(Icons.remove_circle_outline)),
+                Text('$q', style: const TextStyle(fontWeight: FontWeight.w800)),
+                IconButton(onPressed: q < avail ? () => setState(() => cart[id] = q + 1) : null, icon: const Icon(Icons.add_circle_outline)),
+              ],
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget ordersView() {
+    if (orders.isEmpty) return const SizedBox.shrink();
+    final ar = lang.value == 'ar';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SizedBox(height: 16),
+      Text(t('my_orders'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+      const SizedBox(height: 6),
+      for (final o in orders.take(5))
+        Card(
+          color: _panel,
+          child: ListTile(
+            title: Text('#${o['id']}  ·  ${(o['total'] as num).toStringAsFixed(3)} ${t('bd')}'),
+            subtitle: Text(((o['items'] as List<dynamic>).map((i) => '${i['qty']}× ${ar ? i['name_ar'] : i['name']}').join('، ')) + '\n' + t('st_${o['status']}')),
+            isThreeLine: true,
+            trailing: o['status'] == 'pending'
+                ? TextButton(
+                    onPressed: () async {
+                      try {
+                        await authCall('POST', '/api/customer/orders/${o['id']}/cancel');
+                      } catch (_) {}
+                      await loadMenu();
+                      await loadOrders();
+                    },
+                    child: Text(t('cancel')))
+                : null,
+          ),
+        ),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return Stack(children: [
+      ListView(padding: EdgeInsets.fromLTRB(18, 14, 18, cart.isEmpty ? 24 : 100), children: [
+        Wrap(spacing: 8, children: [
+          for (final b in branches)
+            ChoiceChip(label: Text(bn(Map<String, dynamic>.from(b as Map))), selected: bid == b['id'], onSelected: (_) { cart.clear(); bid = b['id'] as int; loadMenu(); }),
+        ]),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, children: [
+          for (final g in const ['', 'muscle', 'cut', 'light'])
+            ChoiceChip(label: Text(t(g.isEmpty ? 'goal_all' : 'goal_$g')), selected: goal == g, onSelected: (_) { goal = g; loadMenu(); }),
+        ]),
+        const SizedBox(height: 12),
+        if (loading)
+          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
+        else if (err != null)
+          Center(child: Column(children: [Text(err!, style: const TextStyle(color: _bad)), OutlinedButton(onPressed: init, child: Text(t('ok')))]))
+        else if (list.every((p) => p['sold_out'] == true))
+          Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(t('empty_menu'), style: const TextStyle(color: _mute))))
+        else ...[
+          for (final p in list.where((p) => suggested.contains(p['id']))) card(p),
+          for (final p in list.where((p) => !suggested.contains(p['id']))) card(p),
+        ],
+        ordersView(),
+      ]),
+      if (cart.isNotEmpty)
+        Positioned(
+          left: 18, right: 18, bottom: 16,
+          child: FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54), backgroundColor: _violet),
+            onPressed: busy ? null : order,
+            child: Text('${t('order_now')}  ·  ${total.toStringAsFixed(3)} ${t('bd')}'),
+          ),
+        ),
+    ]);
+  }
+}
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -1057,7 +1265,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       );
     } else {
-      body = tab == 0 ? passTab() : tab == 1 ? meTab() : classesTab();
+      body = tab == 0 ? passTab() : tab == 1 ? meTab() : tab == 2 ? classesTab() : const StoreScreen();
     }
     return Scaffold(
       appBar: AppBar(
@@ -1098,6 +1306,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           NavigationDestination(icon: const Icon(Icons.qr_code_2), label: t('pass')),
           NavigationDestination(icon: const Icon(Icons.badge_outlined), label: t('me')),
           NavigationDestination(icon: const Icon(Icons.fitness_center), label: t('cls')),
+          NavigationDestination(icon: const Icon(Icons.restaurant_menu), label: t('store')),
         ],
       ),
     );

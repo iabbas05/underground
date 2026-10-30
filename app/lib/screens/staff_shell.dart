@@ -9,6 +9,7 @@ import 'members_list.dart';
 import 'gate.dart';
 import 'more.dart';
 import 'schedule.dart';
+import 'store.dart';
 
 class StaffShell extends StatefulWidget {
   const StaffShell({super.key});
@@ -21,7 +22,7 @@ class _StaffShellState extends State<StaffShell> {
 
   @override
   Widget build(BuildContext context) {
-    final titles = [tr('nav_checkin'), tr('nav_new'), tr('gate_scan'), tr('nav_schedule'), tr('nav_me')];
+    final titles = [tr('nav_checkin'), tr('nav_new'), tr('gate_scan'), tr('nav_schedule'), tr('nav_store'), tr('nav_me')];
     final branch = Lookups.branch(Session.branchId);
     return Scaffold(
       appBar: AppBar(
@@ -35,6 +36,7 @@ class _StaffShellState extends State<StaffShell> {
         MemberForm(onDone: () => setState(() => index = 0)),
         index == 2 ? const GateScanScreen() : const SizedBox.shrink(),
         const ScheduleScreen(),
+        const StoreScreen(),
         const MeScreen(),
       ]),
       bottomNavigationBar: NavigationBar(
@@ -45,6 +47,7 @@ class _StaffShellState extends State<StaffShell> {
           NavigationDestination(icon: const Icon(Icons.person_add_alt_outlined), selectedIcon: const Icon(Icons.person_add_alt_1), label: tr('nav_new')),
           NavigationDestination(icon: const Icon(Icons.qr_code_scanner), selectedIcon: const Icon(Icons.qr_code_scanner), label: tr('gate_scan')),
           NavigationDestination(icon: const Icon(Icons.calendar_month_outlined), selectedIcon: const Icon(Icons.calendar_month), label: tr('nav_schedule')),
+          NavigationDestination(icon: const Icon(Icons.restaurant_menu), selectedIcon: const Icon(Icons.restaurant_menu), label: tr('nav_store')),
           NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: tr('nav_me')),
         ],
       ),

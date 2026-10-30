@@ -747,6 +747,126 @@ route('POST', '/api/accounts/:id/status', async ({ env, params, body }) => {
   return { ok: true };
 }, { admin: true });
 
+/* ---------- store ---------- */
+const ORDER_OPEN = "('pending','approved','ready')";
+async function storeMenu(env, branchId, date) {
+  const rows = (await env.DB.prepare(`SELECT p.*, COALESCE(s.qty,0) AS stock,
+      COALESCE((SELECT SUM(i.qty) FROM order_items i JOIN orders o ON o.id=i.order_id WHERE i.product_id=p.id AND o.branch_id=? AND o.pickup_date=? AND o.status IN ('pending','approved','ready','picked')),0) AS reserved
+    FROM products p LEFT JOIN product_stock s ON s.product_id=p.id AND s.branch_id=? AND s.date=? WHERE p.active=1 ORDER BY p.category,p.id`).bind(branchId, date, branchId, date).all()).results;
+  return rows.map((p) => ({ ...p, available: Math.max(0, p.stock - p.reserved), sold_out: p.stock - p.reserved <= 0 }));
+}
+const goodForGoal = (items, goal) => {
+  const ok = items.filter((p) => !p.sold_out && p.category !== 'drink' && p.calories > 100);
+  if (goal === 'muscle') return ok.sort((a, b) => b.protein - a.protein).slice(0, 3);
+  if (goal === 'cut') return ok.filter((p) => p.protein >= 18).sort((a, b) => a.calories - b.calories).slice(0, 3);
+  if (goal === 'light') return ok.sort((a, b) => a.calories - b.calories).slice(0, 3);
+  return [];
+};
+route('GET', '/api/public/store', async ({ env, query }) => {
+  const b = await env.DB.prepare("SELECT id FROM branches WHERE id=? AND kind='gym'").bind(Number(query.get('branch_id'))).first();
+  if (!b) fail(404, 'Branch not found');
+  const items = await storeMenu(env, b.id, today());
+  return { date: today(), items, suggestions: goodForGoal(items, query.get('goal')).map((p) => p.id) };
+}, { auth: false });
+route('POST', '/api/customer/orders', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const b = await env.DB.prepare("SELECT id FROM branches WHERE id=? AND kind='gym'").bind(Number(body.branch_id)).first();
+  if (!b) fail(404, 'Branch not found');
+  const want = new Map();
+  for (const it of Array.isArray(body.items) ? body.items : []) {
+    const id = Number(it.product_id); const q = Math.round(Number(it.qty));
+    if (!Number.isInteger(id) || !(q >= 1 && q <= 20)) fail(400, 'Bad item');
+    want.set(id, (want.get(id) || 0) + q);
+  }
+  if (!want.size) fail(400, 'Cart is empty');
+  const menu = await storeMenu(env, b.id, today());
+  let total = 0; const lines = [];
+  for (const [id, q] of want) {
+    const p = menu.find((x) => x.id === id);
+    if (!p) fail(400, 'Product not available');
+    if (p.available < q) fail(409, `${p.name_ar} - ${p.name}: only ${p.available} left`);
+    total += p.price * q; lines.push({ p, q });
+  }
+  if (await env.DB.prepare(`SELECT COUNT(*) AS n FROM orders WHERE account_id=? AND status='pending'`).bind(a.id).first().then((r) => r.n >= 3)) fail(429, 'You already have 3 orders waiting for approval');
+  total = Math.round(total * 1000) / 1000;
+  const note = str(body.note, 'note', { required: false, max: 200 });
+  const r = await env.DB.prepare('INSERT INTO orders (account_id,branch_id,pickup_date,status,total,note,created_at) VALUES (?,?,?,?,?,?,?)').bind(a.id, b.id, today(), 'pending', total, note, nowTime()).run();
+  const id = r.meta.last_row_id;
+  await env.DB.batch(lines.map(({ p, q }) => env.DB.prepare('INSERT INTO order_items (order_id,product_id,qty,price,name,name_ar) VALUES (?,?,?,?,?,?)').bind(id, p.id, q, p.price, p.name, p.name_ar)));
+  return { id, total, status: 'pending', pay: 'on_pickup' };
+}, { auth: false });
+async function orderRows(env, where, args) {
+  const orders = (await env.DB.prepare(`SELECT o.*, a.name AS customer, a.phone, b.name AS branch, b.name_ar AS branch_ar FROM orders o JOIN accounts a ON a.id=o.account_id JOIN branches b ON b.id=o.branch_id WHERE ${where} ORDER BY o.id DESC LIMIT 100`).bind(...args).all()).results;
+  for (const o of orders) o.items = (await env.DB.prepare('SELECT product_id,qty,price,name,name_ar FROM order_items WHERE order_id=?').bind(o.id).all()).results;
+  return orders;
+}
+route('GET', '/api/customer/orders', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  return { items: await orderRows(env, 'o.account_id=?', [a.id]) };
+}, { auth: false });
+route('POST', '/api/customer/orders/:id/cancel', async ({ request, env, params }) => {
+  const a = await custAuth(request, env);
+  const r = await env.DB.prepare(`UPDATE orders SET status='cancelled', updated_at=? WHERE id=? AND account_id=? AND status='pending'`).bind(nowTime(), params.id, a.id).run();
+  if (!r.meta.changes) fail(400, 'Only a waiting order can be cancelled');
+  return { ok: true };
+}, { auth: false });
+const staffBranch = (user, id) => { if (user.role !== 'admin' && Number(id) !== user.branch_id) fail(403, 'Not your branch'); };
+route('GET', '/api/store/orders', async ({ env, user, query }) => {
+  const st = query.get('status');
+  const br = user.role === 'admin' ? Number(query.get('branch_id')) || null : user.branch_id;
+  const where = []; const args = [];
+  if (br) { where.push('o.branch_id=?'); args.push(br); }
+  if (st) { where.push('o.status=?'); args.push(st); } else { where.push(`o.status IN ${ORDER_OPEN}`); }
+  return { items: await orderRows(env, where.join(' AND '), args) };
+});
+route('POST', '/api/store/orders/:id/status', async ({ env, user, params, body }) => {
+  const st = String(body.status || '');
+  if (!['approved', 'rejected', 'ready', 'picked'].includes(st)) fail(400, 'Bad status');
+  const o = await env.DB.prepare('SELECT id,branch_id,status FROM orders WHERE id=?').bind(params.id).first();
+  if (!o) fail(404, 'Order not found');
+  staffBranch(user, o.branch_id);
+  const flow = { pending: ['approved', 'rejected'], approved: ['ready', 'rejected'], ready: ['picked'] };
+  if (!(flow[o.status] || []).includes(st)) fail(409, `Cannot go from ${o.status} to ${st}`);
+  await env.DB.prepare('UPDATE orders SET status=?, updated_at=? WHERE id=?').bind(st, nowTime(), o.id).run();
+  return { ok: true };
+});
+route('GET', '/api/store/stock', async ({ env, user, query }) => {
+  const br = user.role === 'admin' ? Number(query.get('branch_id')) : user.branch_id;
+  if (!br) fail(400, 'branch_id is required');
+  const d = isDate(query.get('date')) ? query.get('date') : today();
+  return { date: d, branch_id: br, items: await storeMenu(env, br, d) };
+});
+route('PUT', '/api/store/stock', async ({ env, user, body }) => {
+  const br = user.role === 'admin' ? Number(body.branch_id) : user.branch_id;
+  if (body.branch_id != null) staffBranch(user, body.branch_id);
+  const d = isDate(body.date) ? body.date : today();
+  if (d < today()) fail(400, 'Cannot change a past day');
+  const q = Math.round(num(body.qty, 'qty'));
+  if (q < 0 || q > 500) fail(400, 'qty must be between 0 and 500');
+  if (!(await env.DB.prepare('SELECT 1 FROM products WHERE id=?').bind(Number(body.product_id)).first())) fail(404, 'Product not found');
+  if (!(await env.DB.prepare("SELECT 1 FROM branches WHERE id=? AND kind='gym'").bind(br).first())) fail(404, 'Branch not found');
+  await env.DB.prepare('INSERT INTO product_stock (product_id,branch_id,date,qty) VALUES (?,?,?,?) ON CONFLICT(product_id,branch_id,date) DO UPDATE SET qty=excluded.qty').bind(Number(body.product_id), br, d, q).run();
+  return { ok: true };
+});
+const CATS = ['meal', 'snack', 'drink', 'supplement'];
+function productFields(body) {
+  const price = num(body.price, 'price');
+  if (price < 0 || price > 1000) fail(400, 'price out of range');
+  const cat = CATS.includes(body.category) ? body.category : 'meal';
+  const n = (k) => (body[k] == null || body[k] === '' ? null : Math.round(num(body[k], k)));
+  return [str(body.name, 'name'), str(body.name_ar, 'name_ar'), str(body.descr, 'descr', { required: false, max: 300 }), str(body.descr_ar, 'descr_ar', { required: false, max: 300 }), cat, Math.round(price * 1000) / 1000, n('calories'), n('protein'), n('carbs'), n('fat'), str(body.tags, 'tags', { required: false, max: 120 }), body.active === false ? 0 : 1];
+}
+route('GET', '/api/store/products', async ({ env }) => ({ items: (await env.DB.prepare('SELECT * FROM products ORDER BY category,id').all()).results }), { admin: true });
+route('POST', '/api/store/products', async ({ env, body }) => {
+  const r = await env.DB.prepare('INSERT INTO products (name,name_ar,descr,descr_ar,category,price,calories,protein,carbs,fat,tags,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(...productFields(body)).run();
+  return { id: r.meta.last_row_id };
+}, { admin: true });
+route('PUT', '/api/store/products/:id', async ({ env, params, body }) => {
+  const r = await env.DB.prepare('UPDATE products SET name=?,name_ar=?,descr=?,descr_ar=?,category=?,price=?,calories=?,protein=?,carbs=?,fat=?,tags=?,active=? WHERE id=?').bind(...productFields(body), params.id).run();
+  if (!r.meta.changes) fail(404, 'Product not found');
+  return { ok: true };
+}, { admin: true });
+
 // Booking: customer side (pass link token) and staff side.
 const bkRun = async (fn) => {
   try { return await fn(); } catch (e) { if (e instanceof bk.BookingError) fail(e.status, e.message); throw e; }
