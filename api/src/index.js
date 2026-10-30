@@ -752,10 +752,10 @@ route('POST', '/api/accounts/:id/status', async ({ env, params, body }) => {
 /* ---------- store ---------- */
 const ORDER_OPEN = "('pending','approved','ready')";
 async function storeMenu(env, branchId, date) {
-  const rows = (await env.DB.prepare(`SELECT p.*, COALESCE(s.qty,0) AS stock,
+  const rows = (await env.DB.prepare(`SELECT p.*, (SELECT updated_at FROM product_images WHERE product_id=p.id) AS img_v, COALESCE(s.qty,0) AS stock,
       COALESCE((SELECT SUM(i.qty) FROM order_items i JOIN orders o ON o.id=i.order_id WHERE i.product_id=p.id AND o.branch_id=? AND o.pickup_date=? AND o.status IN ('pending','approved','ready','picked')),0) AS reserved
     FROM products p LEFT JOIN product_stock s ON s.product_id=p.id AND s.branch_id=? AND s.date=? WHERE p.active=1 ORDER BY p.category,p.id`).bind(branchId, date, branchId, date).all()).results;
-  return rows.map((p) => ({ ...p, image: IMG_BY_NAME[p.name] ? `/img/p/${IMG_BY_NAME[p.name]}.jpg` : null, available: Math.max(0, p.stock - p.reserved), sold_out: p.stock - p.reserved <= 0 }));
+  return rows.map((p) => ({ ...p, image: p.img_v ? `/img/u/${p.id}.jpg?v=${encodeURIComponent(p.img_v)}` : IMG_BY_NAME[p.name] ? `/img/p/${IMG_BY_NAME[p.name]}.jpg` : null, available: Math.max(0, p.stock - p.reserved), sold_out: p.stock - p.reserved <= 0 }));
 }
 const goodForGoal = (items, goal) => {
   const ok = items.filter((p) => !p.sold_out && p.category !== 'drink' && p.calories > 100);
@@ -908,8 +908,13 @@ route('POST', '/api/customer/recovery/book', async ({ request, env, body }) => {
   if (await env.DB.prepare(`SELECT 1 FROM recovery_bookings WHERE account_id=? AND service_id=? AND date=? AND time=? AND status='booked'`).bind(a.id, sv.id, date, time).first()) fail(409, 'You already booked this slot');
   const slot = (await recSlots(env, sv, date)).find((s) => s.time === time);
   if (slot.full) fail(409, 'This slot is full');
-  const r = await env.DB.prepare('INSERT INTO recovery_bookings (account_id,service_id,date,time,status,created_at) VALUES (?,?,?,?,?,?)').bind(a.id, sv.id, date, time, 'booked', nowTime()).run();
-  return { id: r.meta.last_row_id, date, time, minutes: sv.slot_minutes };
+  let creditId = null;
+  if (body.use_credit !== false) {
+    const cr = await env.DB.prepare('SELECT id FROM account_credits WHERE account_id=? AND kind=? AND used<total AND expires>=? ORDER BY expires,id LIMIT 1').bind(a.id, sv.kind, today()).first();
+    if (cr && (await env.DB.prepare('UPDATE account_credits SET used=used+1 WHERE id=? AND used<total').bind(cr.id).run()).meta.changes) creditId = cr.id;
+  }
+  const r = await env.DB.prepare('INSERT INTO recovery_bookings (account_id,service_id,date,time,status,created_at,credit_id) VALUES (?,?,?,?,?,?,?)').bind(a.id, sv.id, date, time, 'booked', nowTime(), creditId).run();
+  return { id: r.meta.last_row_id, date, time, minutes: sv.slot_minutes, used_credit: creditId !== null };
 }, { auth: false });
 const recView = `SELECT r.id,r.date,r.time,r.status,s.kind,s.slot_minutes,s.branch_id,b.name AS branch,b.name_ar AS branch_ar FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id JOIN branches b ON b.id=s.branch_id`;
 route('GET', '/api/customer/recovery', async ({ request, env }) => {
@@ -918,11 +923,12 @@ route('GET', '/api/customer/recovery', async ({ request, env }) => {
 }, { auth: false });
 route('POST', '/api/customer/recovery/:id/cancel', async ({ request, env, params }) => {
   const a = await custAuth(request, env);
-  const r = await env.DB.prepare(`SELECT id,date,time FROM recovery_bookings WHERE id=? AND account_id=? AND status='booked'`).bind(params.id, a.id).first();
+  const r = await env.DB.prepare(`SELECT id,date,time,credit_id FROM recovery_bookings WHERE id=? AND account_id=? AND status='booked'`).bind(params.id, a.id).first();
   if (!r) fail(404, 'Booking not found');
   const limit = new Date(Date.parse(`${r.date}T${r.time}:00Z`) - 3600e3).toISOString().slice(0, 16).replace('T', ' ');
   if (nowTime() > limit) fail(400, 'Cancel at least 1 hour before');
   await env.DB.prepare(`UPDATE recovery_bookings SET status='cancelled' WHERE id=?`).bind(r.id).run();
+  if (r.credit_id) await env.DB.prepare('UPDATE account_credits SET used=MAX(0,used-1) WHERE id=?').bind(r.credit_id).run();
   return { ok: true };
 }, { auth: false });
 route('GET', '/api/recovery/bookings', async ({ env, user, query }) => {
@@ -934,12 +940,75 @@ route('GET', '/api/recovery/bookings', async ({ env, user, query }) => {
 route('POST', '/api/recovery/bookings/:id/status', async ({ env, user, params, body }) => {
   const st = String(body.status || '');
   if (!['attended', 'no_show', 'cancelled'].includes(st)) fail(400, 'Bad status');
-  const r = await env.DB.prepare('SELECT r.id,s.branch_id FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id WHERE r.id=?').bind(params.id).first();
+  const r = await env.DB.prepare('SELECT r.id,r.status,r.credit_id,s.branch_id FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id WHERE r.id=?').bind(params.id).first();
   if (!r) fail(404, 'Booking not found');
   staffBranch(user, r.branch_id);
   await env.DB.prepare('UPDATE recovery_bookings SET status=? WHERE id=?').bind(st, r.id).run();
+  if (st === 'cancelled' && r.status === 'booked' && r.credit_id) await env.DB.prepare('UPDATE account_credits SET used=MAX(0,used-1) WHERE id=?').bind(r.credit_id).run();
   return { ok: true };
 });
+/* ---------- announcements, product pictures, recovery packages ---------- */
+route('GET', '/api/public/announcements', async ({ env }) => ({
+  items: (await env.DB.prepare('SELECT id,title,title_ar,body,body_ar,created_at FROM announcements WHERE active=1 AND (expires IS NULL OR expires=\'\' OR expires>=?) ORDER BY id DESC LIMIT 10').bind(today()).all()).results,
+}), { auth: false });
+route('GET', '/api/announcements', async ({ env }) => ({ items: (await env.DB.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 100').all()).results }), { admin: true });
+const annFields = (b) => {
+  const exp = b.expires ? String(b.expires) : null;
+  if (exp && !isDate(exp)) fail(400, 'Bad expiry date');
+  return [str(b.title, 'title', { max: 100 }), str(b.title_ar, 'title_ar', { required: false, max: 100 }), str(b.body, 'body', { required: false, max: 400 }), str(b.body_ar, 'body_ar', { required: false, max: 400 }), b.active === false ? 0 : 1, exp];
+};
+route('POST', '/api/announcements', async ({ env, body }) => {
+  const r = await env.DB.prepare('INSERT INTO announcements (title,title_ar,body,body_ar,active,expires,created_at) VALUES (?,?,?,?,?,?,?)').bind(...annFields(body), nowTime()).run();
+  return { id: r.meta.last_row_id };
+}, { admin: true });
+route('PUT', '/api/announcements/:id', async ({ env, params, body }) => {
+  const r = await env.DB.prepare('UPDATE announcements SET title=?,title_ar=?,body=?,body_ar=?,active=?,expires=? WHERE id=?').bind(...annFields(body), params.id).run();
+  if (!r.meta.changes) fail(404, 'Not found');
+  return { ok: true };
+}, { admin: true });
+
+route('PUT', '/api/store/products/:id/image', async ({ env, params, body }) => {
+  const data = String(body.data || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!/^[A-Za-z0-9+/]+=*$/.test(data) || data.length > 280000) fail(400, 'Send a JPEG under 200 KB');
+  let head; try { head = atob(data.slice(0, 8)); } catch { fail(400, 'Bad image'); }
+  if (head.charCodeAt(0) !== 0xff || head.charCodeAt(1) !== 0xd8) fail(400, 'Only JPEG pictures are accepted');
+  if (!(await env.DB.prepare('SELECT 1 FROM products WHERE id=?').bind(params.id).first())) fail(404, 'Product not found');
+  await env.DB.prepare('INSERT INTO product_images (product_id,data,updated_at) VALUES (?,?,?) ON CONFLICT(product_id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at').bind(params.id, data, nowTime()).run();
+  return { ok: true };
+}, { admin: true });
+route('POST', '/api/store/products/:id/image/delete', async ({ env, params }) => {
+  await env.DB.prepare('DELETE FROM product_images WHERE product_id=?').bind(params.id).run();
+  return { ok: true };
+}, { admin: true });
+
+const PKG_KINDS = ['sauna', 'massage'];
+route('GET', '/api/public/recovery/packages', async ({ env }) => ({ items: (await env.DB.prepare('SELECT id,kind,name,name_ar,sessions,price,valid_days FROM recovery_packages WHERE active=1 ORDER BY kind,sessions').all()).results }), { auth: false });
+route('GET', '/api/recovery/packages', async ({ env }) => ({ items: (await env.DB.prepare('SELECT * FROM recovery_packages ORDER BY kind,sessions').all()).results }));
+const pkgFields = (b) => {
+  const kind = String(b.kind || ''); if (!PKG_KINDS.includes(kind)) fail(400, 'Bad kind');
+  const sessions = Math.round(num(b.sessions, 'sessions')); const price = num(b.price, 'price'); const days = Math.round(num(b.valid_days ?? 90, 'valid_days'));
+  if (sessions < 1 || sessions > 100 || price < 0 || days < 1 || days > 730) fail(400, 'Bad package numbers');
+  return [kind, str(b.name, 'name', { max: 60 }), str(b.name_ar, 'name_ar', { max: 60 }), sessions, price, days, b.active === false ? 0 : 1];
+};
+route('POST', '/api/recovery/packages', async ({ env, body }) => ({ id: (await env.DB.prepare('INSERT INTO recovery_packages (kind,name,name_ar,sessions,price,valid_days,active) VALUES (?,?,?,?,?,?,?)').bind(...pkgFields(body)).run()).meta.last_row_id }), { admin: true });
+route('PUT', '/api/recovery/packages/:id', async ({ env, params, body }) => {
+  const r = await env.DB.prepare('UPDATE recovery_packages SET kind=?,name=?,name_ar=?,sessions=?,price=?,valid_days=?,active=? WHERE id=?').bind(...pkgFields(body), params.id).run();
+  if (!r.meta.changes) fail(404, 'Not found');
+  return { ok: true };
+}, { admin: true });
+// Staff sell a package at the counter (payment taken there) and the sessions land on the customer's account.
+route('POST', '/api/accounts/:id/credits', async ({ env, params, body }) => {
+  const acc = await env.DB.prepare("SELECT id FROM accounts WHERE id=? AND status='active'").bind(params.id).first();
+  if (!acc) fail(404, 'Active account not found');
+  const pk = await env.DB.prepare('SELECT * FROM recovery_packages WHERE id=? AND active=1').bind(Number(body.package_id)).first();
+  if (!pk) fail(404, 'Package not found');
+  const r = await env.DB.prepare('INSERT INTO account_credits (account_id,kind,package_id,total,expires,created_at) VALUES (?,?,?,?,?,?)').bind(acc.id, pk.kind, pk.id, pk.sessions, addDays(today(), pk.valid_days), nowTime()).run();
+  return { id: r.meta.last_row_id, sessions: pk.sessions, price: pk.price };
+});
+route('GET', '/api/customer/credits', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  return { items: (await env.DB.prepare('SELECT kind, SUM(total-used) AS remaining, MIN(expires) AS expires FROM account_credits WHERE account_id=? AND used<total AND expires>=? GROUP BY kind').bind(a.id, today()).all()).results };
+}, { auth: false });
 route('GET', '/api/recovery/services', async ({ env }) => ({ items: (await env.DB.prepare('SELECT s.*,b.name AS branch,b.name_ar AS branch_ar FROM recovery_services s JOIN branches b ON b.id=s.branch_id ORDER BY s.id').all()).results }), { admin: true });
 route('PUT', '/api/recovery/services/:id', async ({ env, params, body }) => {
   const cap = Math.round(num(body.capacity, 'capacity'));
@@ -1163,6 +1232,11 @@ export default {
       const tk = path.split('/').pop();
       const mf = { name: 'UNDERGROUND', short_name: 'UNDERGROUND', start_url: `/m/${tk}`, scope: '/m/', display: 'standalone', background_color: '#0a090e', theme_color: '#0a090e', lang: 'ar', dir: 'rtl', icons: [{ src: '/icon.png', sizes: '58x58', type: 'image/png' }] };
       return new Response(JSON.stringify(mf), { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store' } });
+    }
+    if (request.method === 'GET' && path.startsWith('/img/u/')) {
+      const row = await env.DB.prepare('SELECT data FROM product_images WHERE product_id=?').bind(Number(path.slice(7).replace(/\.jpg$/, ''))).first();
+      if (!row) return new Response('Not found', { status: 404 });
+      return new Response(Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0)), { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });
     }
     if (request.method === 'GET' && path.startsWith('/img/p/')) {
       const slug = path.slice(7).replace(/\.jpg$/, '');
