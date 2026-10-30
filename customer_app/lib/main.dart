@@ -1,3 +1,64 @@
+  Future<void> book(String time) async {
+    if (custToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('need_login2'))));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+      return;
+    }
+    final ar = lang.value == 'ar';
+    final sv = Map<String, dynamic>.from(services[si] as Map);
+    final b = Map<String, dynamic>.from(branches[bi] as Map);
+    final kind = sv['kind'] as String;
+    final haveCredit = credits.any((c) => (c as Map)['kind'] == kind && ((c['remaining'] as num) > 0));
+    final price = sv['price'] == null ? '' : '${(sv['price'] as num).toStringAsFixed(1)} ${t('bd')}';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _panel,
+        title: Text(t('confirm_q')),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${t(kind)}  ·  ${sv['slot_minutes']} ${t('slot_min')}', style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('${t('branch_l')}: ${bn(b)}'),
+          Text('${t('date_l')}: $date'),
+          Text('${t('time_l')}: $time'),
+          const SizedBox(height: 6),
+          Text(haveCredit ? t('from_package') : (price.isEmpty ? t('pay_at_desk') : '$price  ·  ${t('pay_at_desk')}'), style: TextStyle(color: haveCredit ? _ok : _violetSoft)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('confirm_book'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final br = await authCall('POST', '/api/customer/recovery/book', {'service_id': sv['id'], 'date': date, 'time': time});
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _panel,
+            title: Row(children: [const Icon(Icons.check_circle, color: _ok), const SizedBox(width: 8), Expanded(child: Text(t('book_done')))]),
+            content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${t('ref')}: ${br['ref']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+              const SizedBox(height: 6),
+              Text('${t(kind)}  ·  ${ar ? (br['branch_ar'] ?? br['branch']) : br['branch']}'),
+              Text('${br['date']}  ${br['time']}'),
+              if (br['used_credit'] == true) Padding(padding: const EdgeInsets.only(top: 6), child: Text(t('used_credit'), style: const TextStyle(color: _ok))),
+              const SizedBox(height: 10),
+              Text(t('arrive_early'), style: const TextStyle(color: _mute, fontSize: 12)),
+            ]),
+            actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(t('done')))],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+    await loadSlots();
+    await loadMine();
+  }
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -56,7 +117,7 @@ const _s = <String, Map<String, String>>{
     'acct': 'حسابي', 'login': 'تسجيل الدخول', 'signup': 'إنشاء حساب', 'username': 'اسم المستخدم', 'password': 'كلمة المرور (8 أحرف على الأقل)', 'fullname': 'الاسم', 'phone': 'رقم الهاتف', 'have_acc': 'عندي حساب', 'no_acc': 'ما عندي حساب', 'pending_msg': 'حسابك قيد المراجعة. إذا كنت مشتركاً، أدخل كود الربط من الموظف أو انتظر تفعيل الإدارة.', 'link_code': 'كود الربط من الموظف', 'send_code': 'إرسال الرمز', 'verify': 'تأكيد', 'email': 'البريد الإلكتروني', 'otp': 'رمز التحقق', 'email_ok': 'تم توثيق البريد', 'logout': 'تسجيل الخروج', 'sub_none': 'لا يوجد اشتراك مرتبط بهذا الحساب', 'sub_expired': 'اشتراكك منتهي', 'addr': 'العنوان', 'hours': 'ساعات العمل', 'call': 'اتصال', 'map': 'الخريطة', 'view_classes': 'عرض الحصص', 'done': 'تم',
     'store': 'الماركت', 'cart': 'السلة', 'order_now': 'اطلب (الدفع عند الاستلام)', 'sold_out': 'نفدت الكمية', 'left_n': 'متبقي', 'goal_all': 'الكل', 'goal_muscle': 'بناء عضل', 'goal_cut': 'تنشيف', 'goal_light': 'خفيف', 'suggested': 'مقترح لك', 'cal': 'سعرة', 'prot': 'بروتين', 'my_orders': 'طلباتي', 'order_sent': 'تم إرسال الطلب، بانتظار موافقة الموظف. الدفع عند الاستلام.', 'st_pending': 'بانتظار الموافقة', 'st_approved': 'تمت الموافقة', 'st_ready': 'جاهز للاستلام', 'st_picked': 'تم الاستلام', 'st_rejected': 'مرفوض', 'st_cancelled': 'ملغي', 'need_login': 'سجّل الدخول أولاً للطلب', 'bd': 'د.ب', 'note': 'ملاحظة (اختياري)', 'empty_menu': 'لا توجد منتجات متاحة اليوم',
     'well': 'الاستشفاء والتقدّم', 'recovery': 'الاستشفاء', 'progress': 'تقدّمي', 'sauna': 'ساونا', 'massage': 'مساج', 'slot_min': 'دقيقة', 'seats_n': 'متاح', 'book_slot': 'حجز', 'booked_ok': 'تم الحجز', 'my_rec': 'حجوزاتي', 'st_booked': 'محجوز', 'st_attended': 'حضرت', 'st_no_show': 'لم تحضر', 'cancel_rec_q': 'إلغاء الحجز؟', 'weight': 'الوزن (كجم)', 'height': 'الطول (سم)', 'body_fat': 'نسبة الدهون % (اختياري)', 'save_entry': 'حفظ القياس', 'bmi': 'مؤشر كتلة الجسم', 'bmi_under': 'نحيف', 'bmi_normal': 'طبيعي', 'bmi_over': 'وزن زائد', 'bmi_obese': 'سمنة', 'change': 'التغيّر', 'history': 'السجل', 'need_login2': 'سجّل الدخول لحفظ قياساتك وحجوزاتك', 'no_slots': 'لا توجد أوقات', 'price': 'السعر',
-    'challenges': 'التحديات', 'ch_none': 'لا توجد تحديات هذا الشهر', 'ch_done': 'أنجزت التحدي', 'ch_link': 'اربط اشتراكك لتتبع تقدمك في التحديات', 'ch_board': 'المتصدرون', 'ch_visits': 'يوم حضور', 'ch_classes': 'حصة', 'freeze': 'تجميد الاشتراك', 'freeze_days': 'مدة التجميد (يوم)', 'freeze_send': 'إرسال الطلب', 'freeze_sent': 'تم إرسال الطلب، بانتظار موافقة الإدارة', 'frozen_until': 'اشتراكك مجمّد حتى', 'sub_frozen': 'مجمّد', 'my_sessions': 'جلساتي المتبقية', 'pkg_title': 'باقات الجلسات', 'pkg_hint': 'اشترِ الباقة من الاستقبال وتضاف جلساتها لحسابك تلقائياً', 'used_credit': 'تم الحجز من رصيد باقتك', 'sessions_n': 'جلسات', 'news': 'العروض والإعلانات', 
+    'challenges': 'التحديات', 'ch_none': 'لا توجد تحديات هذا الشهر', 'ch_done': 'أنجزت التحدي', 'ch_link': 'اربط اشتراكك لتتبع تقدمك في التحديات', 'ch_board': 'المتصدرون', 'ch_visits': 'يوم حضور', 'ch_classes': 'حصة', 'freeze': 'تجميد الاشتراك', 'freeze_days': 'مدة التجميد (يوم)', 'freeze_send': 'إرسال الطلب', 'freeze_sent': 'تم إرسال الطلب، بانتظار موافقة الإدارة', 'frozen_until': 'اشتراكك مجمّد حتى', 'sub_frozen': 'مجمّد', 'confirm_book': 'تأكيد الحجز', 'confirm_q': 'تأكيد هذا الحجز؟', 'book_done': 'تم تأكيد حجزك', 'ref': 'رقم الحجز', 'arrive_early': 'الرجاء الحضور قبل الموعد بـ 10 دقائق. الإلغاء مجاني قبل ساعة من الموعد.', 'pay_at_desk': 'الدفع في الاستقبال', 'from_package': 'من رصيد باقتك', 'time_l': 'الوقت', 'date_l': 'التاريخ', 'branch_l': 'الفرع',  'my_sessions': 'جلساتي المتبقية', 'pkg_title': 'باقات الجلسات', 'pkg_hint': 'اشترِ الباقة من الاستقبال وتضاف جلساتها لحسابك تلقائياً', 'used_credit': 'تم الحجز من رصيد باقتك', 'sessions_n': 'جلسات', 'news': 'العروض والإعلانات', 
   },
   'en': {
     'pass': 'Pass', 'me': 'Membership', 'cls': 'Classes',
@@ -81,7 +142,7 @@ const _s = <String, Map<String, String>>{
     'cancel_booking': 'Cancel booking', 'booked': 'Booked', 'onwait': 'On the waitlist', 'accept': 'Confirm', 'decline': 'Decline',
     'closed': 'Closed', 'attended': 'Attended', 'toolate': 'Cancel at least 1 hour before', 'paused': 'Booking paused until',
     'strikes': 'cancellations in a row', 'bell': 'Notifications', 'nonotif': 'No notifications', 'wait_n': 'waiting', 'err': 'Something went wrong',
-    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today', 'well': 'Recovery & progress', 'recovery': 'Recovery', 'progress': 'My progress', 'sauna': 'Sauna', 'massage': 'Massage', 'slot_min': 'min', 'seats_n': 'left', 'book_slot': 'Book', 'booked_ok': 'Booked', 'my_rec': 'My bookings', 'st_booked': 'Booked', 'st_attended': 'Attended', 'st_no_show': 'No show', 'cancel_rec_q': 'Cancel this booking?', 'weight': 'Weight (kg)', 'height': 'Height (cm)', 'body_fat': 'Body fat % (optional)', 'save_entry': 'Save measurement', 'bmi': 'BMI', 'bmi_under': 'Underweight', 'bmi_normal': 'Normal', 'bmi_over': 'Overweight', 'bmi_obese': 'Obese', 'change': 'Change', 'history': 'History', 'need_login2': 'Log in to save your measurements and bookings', 'no_slots': 'No time slots', 'price': 'Price', 'challenges': 'Challenges', 'ch_none': 'No challenges this month', 'ch_done': 'Challenge completed', 'ch_link': 'Link your membership to track challenge progress', 'ch_board': 'Leaderboard', 'ch_visits': 'days attended', 'ch_classes': 'classes', 'freeze': 'Freeze membership', 'freeze_days': 'Freeze length (days)', 'freeze_send': 'Send request', 'freeze_sent': 'Request sent, waiting for admin approval', 'frozen_until': 'Your membership is frozen until', 'sub_frozen': 'Frozen', 'my_sessions': 'My remaining sessions', 'pkg_title': 'Session packages', 'pkg_hint': 'Buy a package at the front desk and its sessions are added to your account', 'used_credit': 'Booked using your package', 'sessions_n': 'sessions', 'news': 'Offers & news', 
+    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today', 'well': 'Recovery & progress', 'recovery': 'Recovery', 'progress': 'My progress', 'sauna': 'Sauna', 'massage': 'Massage', 'slot_min': 'min', 'seats_n': 'left', 'book_slot': 'Book', 'booked_ok': 'Booked', 'my_rec': 'My bookings', 'st_booked': 'Booked', 'st_attended': 'Attended', 'st_no_show': 'No show', 'cancel_rec_q': 'Cancel this booking?', 'weight': 'Weight (kg)', 'height': 'Height (cm)', 'body_fat': 'Body fat % (optional)', 'save_entry': 'Save measurement', 'bmi': 'BMI', 'bmi_under': 'Underweight', 'bmi_normal': 'Normal', 'bmi_over': 'Overweight', 'bmi_obese': 'Obese', 'change': 'Change', 'history': 'History', 'need_login2': 'Log in to save your measurements and bookings', 'no_slots': 'No time slots', 'price': 'Price', 'challenges': 'Challenges', 'ch_none': 'No challenges this month', 'ch_done': 'Challenge completed', 'ch_link': 'Link your membership to track challenge progress', 'ch_board': 'Leaderboard', 'ch_visits': 'days attended', 'ch_classes': 'classes', 'freeze': 'Freeze membership', 'freeze_days': 'Freeze length (days)', 'freeze_send': 'Send request', 'freeze_sent': 'Request sent, waiting for admin approval', 'frozen_until': 'Your membership is frozen until', 'sub_frozen': 'Frozen', 'confirm_book': 'Confirm booking', 'confirm_q': 'Confirm this booking?', 'book_done': 'Your booking is confirmed', 'ref': 'Booking ref', 'arrive_early': 'Please arrive 10 minutes early. Free cancellation up to 1 hour before.', 'pay_at_desk': 'Pay at the front desk', 'from_package': 'From your package', 'time_l': 'Time', 'date_l': 'Date', 'branch_l': 'Branch',  'my_sessions': 'My remaining sessions', 'pkg_title': 'Session packages', 'pkg_hint': 'Buy a package at the front desk and its sessions are added to your account', 'used_credit': 'Booked using your package', 'sessions_n': 'sessions', 'news': 'Offers & news', 
 
 
  'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
@@ -937,6 +998,7 @@ class _RecoveryViewState extends State<RecoveryView> {
               color: _panel,
               child: ListTile(
                 title: Text('${t(m['kind'] as String)}  ·  ${m['date']}  ${m['time']}'),
+                isThreeLine: false,
                 subtitle: Text('${ar ? (m['branch_ar'] ?? m['branch']) : m['branch']}  ·  ${t('st_${m['status']}')}'),
                 trailing: m['status'] == 'booked'
                     ? TextButton(

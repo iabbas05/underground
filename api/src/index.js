@@ -914,7 +914,8 @@ route('POST', '/api/customer/recovery/book', async ({ request, env, body }) => {
     if (cr && (await env.DB.prepare('UPDATE account_credits SET used=used+1 WHERE id=? AND used<total').bind(cr.id).run()).meta.changes) creditId = cr.id;
   }
   const r = await env.DB.prepare('INSERT INTO recovery_bookings (account_id,service_id,date,time,status,created_at,credit_id) VALUES (?,?,?,?,?,?,?)').bind(a.id, sv.id, date, time, 'booked', nowTime(), creditId).run();
-  return { id: r.meta.last_row_id, date, time, minutes: sv.slot_minutes, used_credit: creditId !== null };
+  const br = await env.DB.prepare('SELECT name,name_ar FROM branches WHERE id=?').bind(sv.branch_id).first();
+  return { id: r.meta.last_row_id, ref: 'R' + String(r.meta.last_row_id).padStart(5, '0'), kind: sv.kind, branch: br.name, branch_ar: br.name_ar, date, time, minutes: sv.slot_minutes, price: sv.price, used_credit: creditId !== null };
 }, { auth: false });
 const recView = `SELECT r.id,r.date,r.time,r.status,s.kind,s.slot_minutes,s.branch_id,b.name AS branch,b.name_ar AS branch_ar FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id JOIN branches b ON b.id=s.branch_id`;
 route('GET', '/api/customer/recovery', async ({ request, env }) => {

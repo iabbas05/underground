@@ -629,6 +629,7 @@ check('customer sees 5 massage sessions', r.data.items.length === 1 && r.data.it
 const d2 = new Date(Date.now() + 3 * 3600e3 + 2 * 86400e3).toISOString().slice(0, 10);
 r = await call('POST', '/api/customer/recovery/book', { service_id: massage.id, date: d2, time: '15:00' }, cTok);
 check('booking uses a package session', r.status === 200 && r.data.used_credit === true, r);
+check('booking confirmation carries reference and details', /^R\d{5}$/.test(r.data.ref) && r.data.kind === 'massage' && r.data.branch_ar && r.data.price === 15, r.data);
 const cb = r.data.id;
 r = await call('GET', '/api/customer/credits', null, cTok);
 check('4 sessions left', r.data.items[0].remaining === 4, r.data);
