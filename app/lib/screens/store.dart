@@ -113,6 +113,8 @@ class _StoreScreenState extends State<StoreScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(loc(p, 'name'), style: const TextStyle(fontWeight: FontWeight.w700)),
                       Text('${tr('reserved')}: ${p['reserved']}  ·  ${tr('available')}: ${p['available']}', style: TextStyle(fontSize: 12, color: p['sold_out'] == true ? Palette.bad : Palette.mute)),
+                      if (p['low'] == true) Text(tr('low_stock'), style: const TextStyle(fontSize: 12, color: Palette.bad, fontWeight: FontWeight.w700)),
+                      if (p['suggest'] != null) Text('${tr('suggest_qty')}: ${p['suggest']}', style: const TextStyle(fontSize: 12, color: Palette.mute)),
                     ]),
                   ),
                   SizedBox(width: 70, child: TextField(controller: c, keyboardType: TextInputType.number, textAlign: TextAlign.center)),

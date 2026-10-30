@@ -1,6 +1,8 @@
 // Class booking: 20 seats per class, waitlist with offers, cancel rules, no-show bans, in-app notifications.
 // Customers can book today and tomorrow only (Bahrain time). Friday is the rest day.
 
+import { pushToMembers } from './push.js';
+
 export const MAX_STRIKES = 3;          // ban when consecutive cancels/no-shows go above this
 export const BAN_DAYS = 7;
 export const CANCEL_MIN_MINUTES = 60;  // cancel at least 1 hour before the class
@@ -41,6 +43,7 @@ function msg(kind, d) {
     case 'freeze_ok': return { title_ar: 'تم تجميد اشتراكك', title_en: 'Membership frozen', body_ar: `تم تجميد اشتراكك ${d.days} يوم حتى ${d.until}، وتمدد تاريخ الانتهاء بنفس المدة.`, body_en: `Your membership is frozen for ${d.days} days until ${d.until}; the end date was extended by the same amount.` };
     case 'freeze_no': return { title_ar: 'رُفض طلب التجميد', title_en: 'Freeze request declined', body_ar: 'لم تتم الموافقة على طلب تجميد اشتراكك. تواصل مع الفرع للتفاصيل.', body_en: 'Your freeze request was not approved. Ask your branch for details.' };
     case 'challenge_done': return { title_ar: 'أنجزت التحدي!', title_en: 'Challenge completed!', body_ar: `مبروك! أنجزت تحدي: ${d.title_ar}`, body_en: `Congrats! You completed: ${d.title}` };
+    case 'broadcast': return { title_ar: d.title_ar, title_en: d.title_en || d.title_ar, body_ar: d.body_ar, body_en: d.body_en || d.body_ar };
     default: return { title_ar: '', title_en: '', body_ar: '', body_en: '' };
   }
 }
@@ -49,7 +52,8 @@ export async function notify(env, memberId, kind, data) {
   const m = msg(kind, data);
   await env.DB.prepare('INSERT INTO notifications (member_id,kind,title_ar,title_en,body_ar,body_en,data,created_at) VALUES (?,?,?,?,?,?,?,?)')
     .bind(memberId, kind, m.title_ar, m.title_en, m.body_ar, m.body_en, JSON.stringify(data), stamp()).run();
-  // Push / WhatsApp adapters plug in here later (read env.WHATSAPP_* / FCM settings and send m.*).
+  // Push goes out when FCM is configured (see push.js); WhatsApp can plug in here the same way.
+  try { await pushToMembers(env, [memberId], m.title_ar, m.body_ar); } catch { /* push must never break the action */ }
 }
 
 export async function listNotifications(env, memberId) {

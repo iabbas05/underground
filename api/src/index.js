@@ -7,6 +7,7 @@ import { PASS_PAGE_HTML } from './passpage.js';
 import { ICONS } from './icons.js';
 import { PRODUCT_IMGS, IMG_BY_NAME } from './productimgs.js';
 import * as bk from './booking.js';
+import { pushToMembers, pushToAccount } from './push.js';
 import { buildPkpass } from './wallet.js';
 
 const enc = new TextEncoder();
@@ -791,11 +792,17 @@ route('POST', '/api/customer/orders', async ({ request, env, body }) => {
   }
   if (await env.DB.prepare(`SELECT COUNT(*) AS n FROM orders WHERE account_id=? AND status='pending'`).bind(a.id).first().then((r) => r.n >= 3)) fail(429, 'You already have 3 orders waiting for approval');
   total = Math.round(total * 1000) / 1000;
+  let discount = 0; let couponCode = null;
+  if (body.coupon) {
+    const c = await couponCheck(env, a.id, body.coupon, total);
+    if (!(await env.DB.prepare('UPDATE coupons SET used=used+1 WHERE code=? AND (max_uses IS NULL OR used<max_uses)').bind(c.code).run()).meta.changes) fail(409, 'This coupon has been used up');
+    discount = c.discount; couponCode = c.code; total = Math.round((total - discount) * 1000) / 1000;
+  }
   const note = str(body.note, 'note', { required: false, max: 200 });
-  const r = await env.DB.prepare('INSERT INTO orders (account_id,branch_id,pickup_date,status,total,note,created_at) VALUES (?,?,?,?,?,?,?)').bind(a.id, b.id, today(), 'pending', total, note, nowTime()).run();
+  const r = await env.DB.prepare('INSERT INTO orders (account_id,branch_id,pickup_date,status,total,note,created_at,discount,coupon_code) VALUES (?,?,?,?,?,?,?,?,?)').bind(a.id, b.id, today(), 'pending', total, note, nowTime(), discount, couponCode).run();
   const id = r.meta.last_row_id;
   await env.DB.batch(lines.map(({ p, q }) => env.DB.prepare('INSERT INTO order_items (order_id,product_id,qty,price,name,name_ar) VALUES (?,?,?,?,?,?)').bind(id, p.id, q, p.price, p.name, p.name_ar)));
-  return { id, total, status: 'pending', pay: 'on_pickup' };
+  return { id, total, discount, coupon: couponCode, status: 'pending', pay: 'on_pickup' };
 }, { auth: false });
 async function orderRows(env, where, args) {
   const orders = (await env.DB.prepare(`SELECT o.*, a.name AS customer, a.phone, b.name AS branch, b.name_ar AS branch_ar FROM orders o JOIN accounts a ON a.id=o.account_id JOIN branches b ON b.id=o.branch_id WHERE ${where} ORDER BY o.id DESC LIMIT 100`).bind(...args).all()).results;
@@ -810,6 +817,7 @@ route('POST', '/api/customer/orders/:id/cancel', async ({ request, env, params }
   const a = await custAuth(request, env);
   const r = await env.DB.prepare(`UPDATE orders SET status='cancelled', updated_at=? WHERE id=? AND account_id=? AND status='pending'`).bind(nowTime(), params.id, a.id).run();
   if (!r.meta.changes) fail(400, 'Only a waiting order can be cancelled');
+  await releaseCoupon(env, params.id);
   return { ok: true };
 }, { auth: false });
 const staffBranch = (user, id) => { if (user.role !== 'admin' && Number(id) !== user.branch_id) fail(403, 'Not your branch'); };
@@ -824,19 +832,29 @@ route('GET', '/api/store/orders', async ({ env, user, query }) => {
 route('POST', '/api/store/orders/:id/status', async ({ env, user, params, body }) => {
   const st = String(body.status || '');
   if (!['approved', 'rejected', 'ready', 'picked'].includes(st)) fail(400, 'Bad status');
-  const o = await env.DB.prepare('SELECT id,branch_id,status FROM orders WHERE id=?').bind(params.id).first();
+  const o = await env.DB.prepare('SELECT id,branch_id,status,account_id FROM orders WHERE id=?').bind(params.id).first();
   if (!o) fail(404, 'Order not found');
   staffBranch(user, o.branch_id);
   const flow = { pending: ['approved', 'rejected'], approved: ['ready', 'rejected'], ready: ['picked'] };
   if (!(flow[o.status] || []).includes(st)) fail(409, `Cannot go from ${o.status} to ${st}`);
   await env.DB.prepare('UPDATE orders SET status=?, updated_at=? WHERE id=?').bind(st, nowTime(), o.id).run();
+  if (st === 'rejected') await releaseCoupon(env, o.id);
+  const say = { approved: ['تمت الموافقة على طلبك', 'Your order was approved'], ready: ['طلبك جاهز للاستلام', 'Your order is ready for pickup'], rejected: ['تعذّر تجهيز طلبك', 'Your order could not be prepared'] }[st];
+  if (say) { try { await pushToAccount(env, o.account_id, say[0], `${say[0]} (#${o.id})`); } catch { /* ignore */ } }
   return { ok: true };
 });
 route('GET', '/api/store/stock', async ({ env, user, query }) => {
   const br = user.role === 'admin' ? Number(query.get('branch_id')) : user.branch_id;
   if (!br) fail(400, 'branch_id is required');
   const d = isDate(query.get('date')) ? query.get('date') : today();
-  return { date: d, branch_id: br, items: await storeMenu(env, br, d) };
+  const items = await storeMenu(env, br, d);
+  // Suggested quantity = average per day over the last 7 days (+15%), from approved / ready / picked orders.
+  const hist = new Map((await env.DB.prepare(`SELECT i.product_id, SUM(i.qty) AS q FROM order_items i JOIN orders o ON o.id=i.order_id WHERE o.branch_id=? AND o.pickup_date>=? AND o.pickup_date<? AND o.status IN ('approved','ready','picked') GROUP BY i.product_id`).bind(br, addDays(d, -7), d).all()).results.map((r) => [r.product_id, r.q]));
+  for (const p of items) {
+    p.suggest = hist.has(p.id) ? Math.max(1, Math.ceil((hist.get(p.id) / 7) * 1.15)) : null;
+    p.low = p.stock > 0 && !p.sold_out && p.available <= 2;
+  }
+  return { date: d, branch_id: br, items };
 });
 route('PUT', '/api/store/stock', async ({ env, user, body }) => {
   const br = user.role === 'admin' ? Number(body.branch_id) : user.branch_id;
@@ -1208,6 +1226,132 @@ route('POST', '/api/test/clock', async ({ env, body }) => {
 }, { auth: false });
 
 /* ---------- entry ---------- */
+/* ---------- coupons, ratings, finance report, broadcasts, push tokens ---------- */
+async function couponCheck(env, accountId, rawCode, subtotal) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  const c = await env.DB.prepare('SELECT * FROM coupons WHERE code=?').bind(code).first();
+  if (!c || !c.active) fail(404, 'Coupon code not found');
+  if (c.expires && c.expires < today()) fail(400, 'This coupon has expired');
+  if (c.max_uses != null && c.used >= c.max_uses) fail(409, 'This coupon has been used up');
+  if (subtotal < c.min_total) fail(400, `Minimum order for this coupon is ${c.min_total}`);
+  if (c.per_account && (await env.DB.prepare(`SELECT 1 FROM orders WHERE account_id=? AND coupon_code=? AND status NOT IN ('rejected','cancelled')`).bind(accountId, code).first())) fail(409, 'You already used this coupon');
+  const raw = c.kind === 'percent' ? subtotal * (c.value / 100) : c.value;
+  const discount = Math.round(Math.min(subtotal, raw) * 1000) / 1000;
+  return { code, discount };
+}
+async function releaseCoupon(env, orderId) {
+  await env.DB.prepare('UPDATE coupons SET used=MAX(0,used-1) WHERE code=(SELECT coupon_code FROM orders WHERE id=?)').bind(orderId).run();
+}
+route('POST', '/api/customer/coupon/check', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const c = await couponCheck(env, a.id, body.code, Math.max(0, Number(body.subtotal) || 0));
+  return c;
+}, { auth: false });
+route('GET', '/api/coupons', async ({ env }) => ({ items: (await env.DB.prepare('SELECT * FROM coupons ORDER BY active DESC, code').all()).results }), { admin: true });
+const couponFields = (b) => {
+  const kind = String(b.kind || ''); if (!['percent', 'amount'].includes(kind)) fail(400, 'Bad kind');
+  const value = num(b.value, 'value'); if (value <= 0 || (kind === 'percent' && value > 100)) fail(400, 'Bad value');
+  const exp = b.expires ? String(b.expires) : null; if (exp && !isDate(exp)) fail(400, 'Bad expiry date');
+  const mu = b.max_uses === '' || b.max_uses == null ? null : Math.round(num(b.max_uses, 'max_uses'));
+  return [kind, value, Math.max(0, Number(b.min_total) || 0), mu, b.per_account === false ? 0 : 1, exp, b.active === false ? 0 : 1, str(b.note, 'note', { required: false, max: 100 })];
+};
+route('POST', '/api/coupons', async ({ env, body }) => {
+  const code = str(body.code, 'code', { max: 30 }).toUpperCase();
+  if (!/^[A-Z0-9_-]{3,30}$/.test(code)) fail(400, 'Code: letters, digits, - or _ (3-30)');
+  if (await env.DB.prepare('SELECT 1 FROM coupons WHERE code=?').bind(code).first()) fail(409, 'Code already exists');
+  await env.DB.prepare('INSERT INTO coupons (code,kind,value,min_total,max_uses,per_account,expires,active,note) VALUES (?,?,?,?,?,?,?,?,?)').bind(code, ...couponFields(body)).run();
+  return { code };
+}, { admin: true });
+route('PUT', '/api/coupons/:code', async ({ env, params, body }) => {
+  const r = await env.DB.prepare('UPDATE coupons SET kind=?,value=?,min_total=?,max_uses=?,per_account=?,expires=?,active=?,note=? WHERE code=?').bind(...couponFields(body), params.code.toUpperCase()).run();
+  if (!r.meta.changes) fail(404, 'Not found');
+  return { ok: true };
+}, { admin: true });
+
+route('GET', '/api/pass/:token/rate/pending', async ({ env, params }) => {
+  const m = await passFromToken(env, params.token);
+  return { items: (await env.DB.prepare(`SELECT cb.id AS booking_id, cb.class_date, cb.class_time, s.audience, s.level, b.name AS branch, b.name_ar AS branch_ar FROM class_bookings cb JOIN schedule s ON s.id=cb.schedule_id JOIN branches b ON b.id=s.branch_id LEFT JOIN class_ratings r ON r.booking_id=cb.id WHERE cb.member_id=? AND cb.status='attended' AND cb.class_date>=? AND r.id IS NULL ORDER BY cb.class_date DESC, cb.class_time DESC LIMIT 5`).bind(m.id, addDays(today(), -14)).all()).results };
+}, { auth: false });
+route('POST', '/api/pass/:token/rate', async ({ env, params, body }) => {
+  const m = await passFromToken(env, params.token);
+  const stars = Math.round(num(body.stars, 'stars')); if (stars < 1 || stars > 5) fail(400, 'Stars must be 1 to 5');
+  const cb = await env.DB.prepare(`SELECT id,schedule_id,class_date FROM class_bookings WHERE id=? AND member_id=? AND status='attended'`).bind(Number(body.booking_id), m.id).first();
+  if (!cb) fail(404, 'Only attended classes can be rated');
+  if (await env.DB.prepare('SELECT 1 FROM class_ratings WHERE booking_id=?').bind(cb.id).first()) fail(409, 'Already rated');
+  await env.DB.prepare('INSERT INTO class_ratings (booking_id,member_id,schedule_id,class_date,stars,comment,created_at) VALUES (?,?,?,?,?,?,?)').bind(cb.id, m.id, cb.schedule_id, cb.class_date, stars, str(body.comment, 'comment', { required: false, max: 300 }) || null, nowTime()).run();
+  return { ok: true };
+}, { auth: false });
+route('GET', '/api/reports/ratings', async ({ env, query }) => {
+  const br = Number(query.get('branch_id')) || null;
+  const since = addDays(today(), -90);
+  const slots = (await env.DB.prepare(`SELECT s.id, s.branch_id, b.name AS branch, b.name_ar AS branch_ar, s.audience, s.day, s.time, s.level, ROUND(AVG(r.stars),2) AS avg, COUNT(*) AS n FROM class_ratings r JOIN schedule s ON s.id=r.schedule_id JOIN branches b ON b.id=s.branch_id WHERE r.class_date>=?1 AND (?2 IS NULL OR s.branch_id=?2) GROUP BY s.id ORDER BY avg DESC, n DESC`).bind(since, br).all()).results;
+  const tot = await env.DB.prepare('SELECT ROUND(AVG(r.stars),2) AS avg, COUNT(*) AS n FROM class_ratings r JOIN schedule s ON s.id=r.schedule_id WHERE r.class_date>=?1 AND (?2 IS NULL OR s.branch_id=?2)').bind(since, br).first();
+  const comments = (await env.DB.prepare(`SELECT r.stars, r.comment, r.class_date, s.time, s.level, b.name_ar AS branch_ar FROM class_ratings r JOIN schedule s ON s.id=r.schedule_id JOIN branches b ON b.id=s.branch_id WHERE r.comment IS NOT NULL AND r.class_date>=?1 AND (?2 IS NULL OR s.branch_id=?2) ORDER BY r.id DESC LIMIT 20`).bind(since, br).all()).results;
+  return { avg: tot.avg, n: tot.n, slots, comments };
+}, { admin: true });
+
+route('GET', '/api/reports/finance', async ({ env, query }) => {
+  const month = isMonth(query.get('month')) ? query.get('month') : today().slice(0, 7);
+  const pm = (() => { const [y, m] = month.split('-').map(Number); const d = new Date(Date.UTC(y, m - 2, 1)); return d.toISOString().slice(0, 7); })();
+  const br = Number(query.get('branch_id')) || null;
+  const one = async (mo) => {
+    const kinds = (await env.DB.prepare('SELECT kind, ROUND(SUM(amount),3) AS v, COUNT(*) AS n FROM payments WHERE substr(date,1,7)=?1 AND (?2 IS NULL OR branch_id=?2) GROUP BY kind').bind(mo, br).all()).results;
+    const pay = kinds.reduce((a, k) => a + k.v, 0);
+    const store = (await env.DB.prepare(`SELECT COALESCE(ROUND(SUM(total),3),0) AS v, COUNT(*) AS n FROM orders WHERE status='picked' AND substr(pickup_date,1,7)=?1 AND (?2 IS NULL OR branch_id=?2)`).bind(mo, br).first());
+    const exp = (await env.DB.prepare('SELECT COALESCE(SUM(amount),0) AS v FROM expenses WHERE substr(date,1,7)=?1 AND (?2 IS NULL OR branch_id=?2)').bind(mo, br).first()).v;
+    const sal = (await env.DB.prepare('SELECT COALESCE(SUM(s.amount),0) AS v FROM salaries s JOIN users u ON u.id=s.user_id WHERE s.month=?1 AND (?2 IS NULL OR u.branch_id=?2)').bind(mo, br).first()).v;
+    const pk = (await env.DB.prepare('SELECT COALESCE(SUM(p.price),0) AS v, COUNT(*) AS n FROM account_credits c JOIN recovery_packages p ON p.id=c.package_id WHERE substr(c.created_at,1,7)=?1').bind(mo).first());
+    const sess = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id WHERE r.status='attended' AND substr(r.date,1,7)=?1 AND (?2 IS NULL OR s.branch_id=?2)`).bind(mo, br).first()).n;
+    return { month: mo, payments: Math.round(pay * 1000) / 1000, by_kind: kinds, store: store.v, store_orders: store.n, packages: pk.v, packages_sold: pk.n, recovery_sessions: sess, expenses: exp, salaries: sal, income: Math.round((pay + store.v) * 1000) / 1000, net: Math.round((pay + store.v - exp - sal) * 1000) / 1000 };
+  };
+  const [cur, prev] = [await one(month), await one(pm)];
+  const branches = (await env.DB.prepare(`SELECT br.id, br.name, br.name_ar,
+      COALESCE((SELECT SUM(amount) FROM payments WHERE branch_id=br.id AND substr(date,1,7)=?1),0) AS payments,
+      COALESCE((SELECT SUM(total) FROM orders WHERE branch_id=br.id AND status='picked' AND substr(pickup_date,1,7)=?1),0) AS store,
+      COALESCE((SELECT SUM(amount) FROM expenses WHERE branch_id=br.id AND substr(date,1,7)=?1),0) AS expenses
+    FROM branches br ORDER BY br.id`).bind(month).all()).results;
+  const pct = (a, b) => (b ? Math.round(((a - b) / b) * 1000) / 10 : null);
+  return { month, prev_month: pm, branch_id: br, cur, prev, change: { income: pct(cur.income, prev.income), expenses: pct(cur.expenses, prev.expenses), net: pct(cur.net, prev.net) }, branches };
+}, { admin: true });
+
+const SEGMENTS = ['all', 'expiring', 'expired', 'inactive'];
+async function segmentMembers(env, seg, branchId) {
+  if (!SEGMENTS.includes(seg)) fail(400, 'Bad segment');
+  const t = today();
+  const cond = {
+    all: ['m.end_date>=?3', [t]],
+    expiring: ['m.end_date BETWEEN ?3 AND ?4', [t, addDays(t, 7)]],
+    expired: ['m.end_date<?3 AND m.end_date>=?4', [t, addDays(t, -60)]],
+    inactive: [`m.end_date>=?3 AND NOT EXISTS (SELECT 1 FROM gate_logs g WHERE g.member_id=m.id AND g.result='allowed' AND g.created_at>=?4)`, [t, addDays(t, -14) + ' 00:00']],
+  }[seg];
+  const rows = (await env.DB.prepare(`SELECT m.id FROM members m WHERE m.blocked=0 AND ${cond[0]} AND (?1 IS NULL OR m.branch_id=?1) AND ?2=?2 LIMIT 3000`).bind(branchId, 1, ...cond[1]).all()).results;
+  return rows.map((r) => r.id);
+}
+route('POST', '/api/broadcast', async ({ env, body }) => {
+  const branchId = body.branch_id ? Number(body.branch_id) : null;
+  const ids = await segmentMembers(env, String(body.segment || ''), branchId);
+  if (body.preview) return { count: ids.length };
+  const tAr = str(body.title_ar, 'title_ar', { max: 80 }); const bAr = str(body.body_ar, 'body_ar', { max: 400 });
+  const tEn = str(body.title_en, 'title_en', { required: false, max: 80 }) || tAr; const bEn = str(body.body_en, 'body_en', { required: false, max: 400 }) || bAr;
+  if (!ids.length) fail(400, 'No members match this group');
+  const data = JSON.stringify({ title_ar: tAr, title_en: tEn, body_ar: bAr, body_en: bEn }); const at = nowTime();
+  for (let i = 0; i < ids.length; i += 50) {
+    await env.DB.batch(ids.slice(i, i + 50).map((id) => env.DB.prepare('INSERT INTO notifications (member_id,kind,title_ar,title_en,body_ar,body_en,data,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(id, 'broadcast', tAr, tEn, bAr, bEn, data, at)));
+  }
+  await env.DB.prepare('INSERT INTO broadcasts (segment,branch_id,title_ar,title_en,body_ar,body_en,sent,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(body.segment, branchId, tAr, tEn, bAr, bEn, ids.length, at).run();
+  try { await pushToMembers(env, ids, tAr, bAr); } catch { /* push is best effort */ }
+  return { sent: ids.length };
+}, { admin: true });
+route('GET', '/api/broadcasts', async ({ env }) => ({ items: (await env.DB.prepare('SELECT * FROM broadcasts ORDER BY id DESC LIMIT 30').all()).results }), { admin: true });
+
+const saveToken = async (env, token, accountId, memberId) => {
+  const tk = str(token, 'token', { max: 400 });
+  await env.DB.prepare('INSERT INTO device_tokens (token,account_id,member_id,created_at) VALUES (?,?,?,?) ON CONFLICT(token) DO UPDATE SET account_id=COALESCE(excluded.account_id,account_id), member_id=COALESCE(excluded.member_id,member_id)').bind(tk, accountId, memberId, nowTime()).run();
+  return { ok: true };
+};
+route('POST', '/api/customer/device', async ({ request, env, body }) => saveToken(env, body.token, (await custAuth(request, env)).id, null), { auth: false });
+route('POST', '/api/pass/:token/device', async ({ env, params, body }) => saveToken(env, body.token, null, (await passFromToken(env, params.token)).id), { auth: false });
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(bk.runCron(env));
