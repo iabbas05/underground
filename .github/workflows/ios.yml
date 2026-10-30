@@ -1,0 +1,39 @@
+name: Build iPhone apps (unsigned IPA)
+# Manual only: macOS minutes are expensive on private repos. Run it from the Actions tab (or with gh workflow run).
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+      - name: Build customer app (iPhone)
+        run: tools/ci_build_ios.sh customer_app ug_member com.underground.member "UNDERGROUND" UNDERGROUND-Member.ipa
+      - name: Build staff app (iPhone)
+        run: tools/ci_build_ios.sh app ug_app com.underground.staff "UNDERGROUND Staff" UNDERGROUND-Staff.ipa
+      - name: Publish iOS logs to a branch
+        if: always()
+        run: |
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          rm -rf /tmp/logs && mkdir /tmp/logs && cp -r logs/. /tmp/logs/ 2>/dev/null || true
+          for f in /tmp/logs/*.ios.txt; do [ -f "$f" ] && tail -n 200 "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
+          git checkout --orphan ios-logs
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -r /tmp/logs/. .
+          git add -A
+          git commit -m "ios logs" || true
+          git push -f origin ios-logs
+      - name: Publish to a Release (download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          name: Latest iPhone IPAs (unsigned)
+          files: dist_ios/*.ipa
