@@ -558,6 +558,17 @@ class _StoreScreenState extends State<StoreScreen> {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (p['image'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: AspectRatio(
+                    aspectRatio: 3 / 2,
+                    child: Image.network('$base${p['image']}', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  ),
+                ),
+              ),
             Row(children: [
               Expanded(child: Text((ar ? p['name_ar'] : p['name']).toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
               if (suggested.contains(id)) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _ok.withOpacity(0.18), borderRadius: BorderRadius.circular(10)), child: Text(t('suggested'), style: const TextStyle(color: _ok, fontSize: 11))),

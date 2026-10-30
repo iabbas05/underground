@@ -5,6 +5,7 @@ import { BACKOFFICE_HTML } from './backoffice.js';
 import { staticCode, dynamicCode, readCode, secondsLeftInWindow } from './gate.js';
 import { PASS_PAGE_HTML } from './passpage.js';
 import { ICONS } from './icons.js';
+import { PRODUCT_IMGS, IMG_BY_NAME } from './productimgs.js';
 import * as bk from './booking.js';
 import { buildPkpass } from './wallet.js';
 
@@ -754,7 +755,7 @@ async function storeMenu(env, branchId, date) {
   const rows = (await env.DB.prepare(`SELECT p.*, COALESCE(s.qty,0) AS stock,
       COALESCE((SELECT SUM(i.qty) FROM order_items i JOIN orders o ON o.id=i.order_id WHERE i.product_id=p.id AND o.branch_id=? AND o.pickup_date=? AND o.status IN ('pending','approved','ready','picked')),0) AS reserved
     FROM products p LEFT JOIN product_stock s ON s.product_id=p.id AND s.branch_id=? AND s.date=? WHERE p.active=1 ORDER BY p.category,p.id`).bind(branchId, date, branchId, date).all()).results;
-  return rows.map((p) => ({ ...p, available: Math.max(0, p.stock - p.reserved), sold_out: p.stock - p.reserved <= 0 }));
+  return rows.map((p) => ({ ...p, image: IMG_BY_NAME[p.name] ? `/img/p/${IMG_BY_NAME[p.name]}.jpg` : null, available: Math.max(0, p.stock - p.reserved), sold_out: p.stock - p.reserved <= 0 }));
 }
 const goodForGoal = (items, goal) => {
   const ok = items.filter((p) => !p.sold_out && p.category !== 'drink' && p.calories > 100);
@@ -1162,6 +1163,12 @@ export default {
       const tk = path.split('/').pop();
       const mf = { name: 'UNDERGROUND', short_name: 'UNDERGROUND', start_url: `/m/${tk}`, scope: '/m/', display: 'standalone', background_color: '#0a090e', theme_color: '#0a090e', lang: 'ar', dir: 'rtl', icons: [{ src: '/icon.png', sizes: '58x58', type: 'image/png' }] };
       return new Response(JSON.stringify(mf), { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store' } });
+    }
+    if (request.method === 'GET' && path.startsWith('/img/p/')) {
+      const slug = path.slice(7).replace(/\.jpg$/, '');
+      const b64 = Object.prototype.hasOwnProperty.call(PRODUCT_IMGS, slug) ? PRODUCT_IMGS[slug] : null;
+      if (!b64) return new Response('Not found', { status: 404 });
+      return new Response(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=604800' } });
     }
     if (request.method === 'GET' && path === '/icon.png' && ICONS['icon.png']) {
       const bin = Uint8Array.from(atob(ICONS['icon.png']), (c) => c.charCodeAt(0));
