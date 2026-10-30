@@ -9,14 +9,22 @@ flutter create --org com.underground --project-name "$NAME" "$NAME"
 cd "$NAME"
 cp "$ROOT/$SRC/pubspec.yaml" pubspec.yaml
 rm -rf lib; cp -r "$ROOT/$SRC/lib" lib
-python3 - "$APPID" "$LABEL" <<'PY'
-import re, sys, glob
+UG_KEYSTORE="$ROOT/tools/ug.keystore" python3 - "$APPID" "$LABEL" <<'PY'
+import re, sys, glob, os
 appid, label = sys.argv[1], sys.argv[2]
 for f in glob.glob('android/app/build.gradle*'):
     s = open(f).read()
     s = re.sub(r'(applicationId\s*=?\s*)"[^"]*"', lambda m: m.group(1) + '"' + appid + '"', s)
     # AGP9 template: drop the kotlin { compilerOptions { jvmTarget } } block that fails to resolve
     s = re.sub(r'\nkotlin\s*\{[^{}]*(\{[^{}]*\}[^{}]*)*\}\s*', '\n', s)
+    # Sign every build with the same key so a new APK can update the one already installed (and in-app updates work)
+    ks = os.environ['UG_KEYSTORE']
+    if f.endswith('.kts'):
+        block = 'signingConfigs {\n        getByName("debug") {\n            storeFile = file("' + ks + '")\n            storePassword = "ugunderground"\n            keyAlias = "ug"\n            keyPassword = "ugunderground"\n        }\n    }\n    '
+    else:
+        block = 'signingConfigs {\n        debug {\n            storeFile file("' + ks + '")\n            storePassword "ugunderground"\n            keyAlias "ug"\n            keyPassword "ugunderground"\n        }\n    }\n    '
+    s = re.sub(r'(\nandroid\s*\{\n)', lambda m: m.group(1) + '    ' + block, s, count=1)
+    assert 'storeFile' in s, 'could not add the signing key to ' + f
     open(f, 'w').write(s)
 m = 'android/app/src/main/AndroidManifest.xml'
 s = open(m).read()
@@ -29,7 +37,7 @@ if 'EnableImpeller' not in s:
     s = s.replace('</application>', '    ' + meta + '\n    </application>')
 open(m, 'w').write(s)
 PY
-grep -n "applicationId" android/app/build.gradle* || true
+grep -n "applicationId\|storeFile" android/app/build.gradle* || true
 echo "const int appBuild = $BUILD;" > lib/build_info.dart
 mkdir -p "$ROOT/logs"
 flutter pub get
