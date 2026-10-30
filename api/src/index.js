@@ -592,14 +592,160 @@ route('GET', '/api/app/version', async ({ request, env, query }) => {
 
 // Public (no login): gym branches and class availability, so the customer app can open without a membership.
 route('GET', '/api/public/branches', async ({ env }) => {
-  const rows = (await env.DB.prepare("SELECT id,name,name_ar FROM branches WHERE kind='gym' ORDER BY id").all()).results;
+  const rows = (await env.DB.prepare("SELECT id,name,name_ar,address,address_ar,hours,hours_ar,phone,map_url FROM branches WHERE kind='gym' ORDER BY id").all()).results;
   return { items: rows };
 }, { auth: false });
+route('PUT', '/api/branches/:id', async ({ env, params, body }) => {
+  const f = (k, max = 200) => (body[k] == null ? null : str(String(body[k]), k, { required: false, max }) || null);
+  const url = f('map_url', 500);
+  if (url && !/^https?:\/\//i.test(url)) fail(400, 'map_url must start with http');
+  const r = await env.DB.prepare('UPDATE branches SET address=?,address_ar=?,hours=?,hours_ar=?,phone=?,map_url=? WHERE id=?')
+    .bind(f('address'), f('address_ar'), f('hours'), f('hours_ar'), f('phone', 40), url, params.id).run();
+  if (!r.meta.changes) fail(404, 'Branch not found');
+  return { ok: true };
+}, { admin: true });
 route('GET', '/api/public/classes', async ({ env, query }) => {
   const b = await env.DB.prepare("SELECT id FROM branches WHERE id=? AND kind='gym'").bind(Number(query.get('branch_id'))).first();
   if (!b) fail(404, 'Branch not found');
   return bk.overview(env, { id: 0, branch_id: b.id, ban_until: null, strike_count: 0 });
 }, { auth: false });
+
+/* ---------- customer accounts ---------- */
+const digits = (s) => String(s || '').replace(/\D/g, '');
+const last8 = (s) => digits(s).slice(-8);
+async function custAuth(request, env) {
+  const header = request.headers.get('Authorization') || '';
+  const p = await readToken(header.startsWith('Bearer ') ? header.slice(7) : '', env.JWT_SECRET);
+  if (!p || p.k !== 'c') fail(401, 'Not signed in');
+  const a = await env.DB.prepare('SELECT id,username,name,phone,email,email_verified,member_id,status FROM accounts WHERE id=?').bind(p.aid).first();
+  if (!a || a.status === 'disabled') fail(401, 'Account disabled');
+  return a;
+}
+const custToken = (a, env) => signToken({ k: 'c', aid: a.id, exp: Math.floor(Date.now() / 1000) + 90 * 86400 }, env.JWT_SECRET);
+// Account view: subscribed only when an admin (or a staff link code) tied it to a member.
+async function accountView(env, a) {
+  let member = null;
+  let subscription = 'none';
+  if (a.member_id) {
+    const m = await env.DB.prepare('SELECT m.id,m.name,m.end_date,m.blocked,m.pass_ver,m.branch_id,p.name AS plan,p.name_ar AS plan_ar,b.name AS branch,b.name_ar AS branch_ar FROM members m LEFT JOIN plans p ON p.id=m.plan_id LEFT JOIN branches b ON b.id=m.branch_id WHERE m.id=?').bind(a.member_id).first();
+    if (m) {
+      const left = daysBetween(today(), m.end_date);
+      subscription = m.blocked ? 'blocked' : left < 0 ? 'expired' : 'active';
+      member = { name: m.name, plan: m.plan, plan_ar: m.plan_ar, branch: m.branch, branch_ar: m.branch_ar, branch_id: m.branch_id, end_date: m.end_date, days_left: left };
+      if (a.status === 'active' && subscription !== 'blocked') member.pass_token = await staticCode(env.JWT_SECRET, m.id, m.pass_ver);
+    }
+  }
+  return { account: { id: a.id, username: a.username, name: a.name, phone: a.phone, email: a.email, email_verified: !!a.email_verified, status: a.status }, subscription, member };
+}
+route('POST', '/api/customer/signup', async ({ env, body }) => {
+  const username = str(body.username, 'username', { max: 30 }).toLowerCase();
+  if (!/^[a-z0-9._-]{3,30}$/.test(username)) fail(400, 'Username: 3-30 letters, numbers . _ -');
+  const password = String(body.password || '');
+  if (password.length < 8 || password.length > 100) fail(400, 'Password must be at least 8 characters');
+  const name = str(body.name, 'name');
+  const phone = digits(body.phone);
+  if (phone.length < 8 || phone.length > 15) fail(400, 'Phone number looks wrong');
+  if (await env.DB.prepare('SELECT 1 FROM accounts WHERE username=?').bind(username).first()) fail(409, 'Username is taken');
+  const r = await env.DB.prepare('INSERT INTO accounts (username,name,phone,password_hash,status,created_at) VALUES (?,?,?,?,?,?)')
+    .bind(username, name, phone, await hashPassword(password), 'pending', nowTime()).run();
+  const a = await env.DB.prepare('SELECT id,username,name,phone,email,email_verified,member_id,status FROM accounts WHERE id=?').bind(r.meta.last_row_id).first();
+  return { token: await custToken(a, env), ...(await accountView(env, a)) };
+}, { auth: false });
+route('POST', '/api/customer/login', async ({ env, body }) => {
+  const username = String(body.username || '').trim().toLowerCase();
+  const a = await env.DB.prepare('SELECT * FROM accounts WHERE username=? OR phone=?').bind(username, digits(username) || '-').first();
+  if (!a || !(await verifyPassword(String(body.password || ''), a.password_hash))) fail(401, 'Wrong username or password');
+  if (a.status === 'disabled') fail(403, 'Account disabled');
+  return { token: await custToken(a, env), ...(await accountView(env, a)) };
+}, { auth: false });
+route('GET', '/api/customer/me', async ({ request, env }) => accountView(env, await custAuth(request, env)), { auth: false });
+// Existing subscriber: enter the 6-digit code the staff generated at the desk.
+route('POST', '/api/customer/link', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const row = await env.DB.prepare('SELECT * FROM link_codes WHERE code=?').bind(digits(body.code)).first();
+  if (!row || row.expires_at < nowTime()) fail(400, 'Code is wrong or expired');
+  if (await env.DB.prepare('SELECT 1 FROM accounts WHERE member_id=? AND id<>? AND status<>?').bind(row.member_id, a.id, 'disabled').first()) fail(409, 'This membership is already linked to another account');
+  await env.DB.prepare('UPDATE accounts SET member_id=?, status=? WHERE id=?').bind(row.member_id, 'active', a.id).run();
+  await env.DB.prepare('DELETE FROM link_codes WHERE code=?').bind(row.code).run();
+  return accountView(env, { ...a, member_id: row.member_id, status: 'active' });
+}, { auth: false });
+route('POST', '/api/customer/password', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const full = await env.DB.prepare('SELECT password_hash FROM accounts WHERE id=?').bind(a.id).first();
+  if (!(await verifyPassword(String(body.old_password || ''), full.password_hash))) fail(401, 'Wrong current password');
+  const pw = String(body.new_password || '');
+  if (pw.length < 8 || pw.length > 100) fail(400, 'Password must be at least 8 characters');
+  await env.DB.prepare('UPDATE accounts SET password_hash=? WHERE id=?').bind(await hashPassword(pw), a.id).run();
+  return { ok: true };
+}, { auth: false });
+
+// Email OTP. Sending needs RESEND_API_KEY + MAIL_FROM secrets; without them the endpoint says email is not set up.
+async function sendEmail(env, to, subject, text) {
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM) return false;
+  const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, text }) });
+  return r.ok;
+}
+route('POST', '/api/customer/email', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const email = str(body.email, 'email', { max: 120 }).toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(400, 'Email looks wrong');
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  await env.DB.prepare('DELETE FROM email_otps WHERE account_id=?').bind(a.id).run();
+  await env.DB.prepare('INSERT INTO email_otps (account_id,code_hash,expires_at) VALUES (?,?,?)').bind(a.id, await hashPassword(code), addDays(today(), 1) + ' ' + nowTime().slice(11)).run();
+  await env.DB.prepare('UPDATE accounts SET email=?, email_verified=0 WHERE id=?').bind(email, a.id).run();
+  const sent = await sendEmail(env, email, 'UNDERGROUND verification code', `Your UNDERGROUND code: ${code}\nIt is valid for 24 hours.`);
+  if (!sent && env.TEST_CLOCK !== '1') fail(503, 'Email sending is not set up yet');
+  return env.TEST_CLOCK === '1' ? { ok: true, test_code: code } : { ok: true };
+}, { auth: false });
+route('POST', '/api/customer/email/verify', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const o = await env.DB.prepare('SELECT * FROM email_otps WHERE account_id=?').bind(a.id).first();
+  if (!o || o.expires_at < nowTime() || o.tries >= 5) fail(400, 'Code is wrong or expired');
+  if (!(await verifyPassword(digits(body.code), o.code_hash))) {
+    await env.DB.prepare('UPDATE email_otps SET tries=tries+1 WHERE id=?').bind(o.id).run();
+    fail(400, 'Code is wrong or expired');
+  }
+  await env.DB.prepare('UPDATE accounts SET email_verified=1 WHERE id=?').bind(a.id).run();
+  await env.DB.prepare('DELETE FROM email_otps WHERE account_id=?').bind(a.id).run();
+  return { ok: true };
+}, { auth: false });
+
+// Staff / admin side: activation and linking to existing subscribers.
+route('POST', '/api/members/:id/link-code', async ({ env, params }) => {
+  const m = await env.DB.prepare('SELECT id FROM members WHERE id=?').bind(params.id).first();
+  if (!m) fail(404, 'Member not found');
+  await env.DB.prepare('DELETE FROM link_codes WHERE member_id=? OR expires_at<?').bind(m.id, nowTime()).run();
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  const exp = new Date(Date.now() + 3 * 3600e3 + 24 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  await env.DB.prepare('INSERT INTO link_codes (code,member_id,expires_at) VALUES (?,?,?)').bind(code, m.id, exp).run();
+  return { code, expires_at: exp };
+});
+route('GET', '/api/accounts', async ({ env, query }) => {
+  const st = query.get('status');
+  const rows = (await env.DB.prepare(`SELECT a.id,a.username,a.name,a.phone,a.email,a.email_verified,a.member_id,a.status,a.created_at,m.name AS member_name,m.end_date
+    FROM accounts a LEFT JOIN members m ON m.id=a.member_id ${st ? 'WHERE a.status=?' : ''} ORDER BY a.id DESC LIMIT 200`).bind(...(st ? [st] : [])).all()).results;
+  for (const a of rows) {
+    if (!a.member_id) a.suggestions = (await env.DB.prepare('SELECT id,name,phone,end_date FROM members WHERE phone LIKE ? LIMIT 5').bind(`%${last8(a.phone)}`).all()).results;
+  }
+  return { items: rows };
+}, { admin: true });
+route('POST', '/api/accounts/:id/link', async ({ env, params, body }) => {
+  const a = await env.DB.prepare('SELECT id FROM accounts WHERE id=?').bind(params.id).first();
+  if (!a) fail(404, 'Account not found');
+  const memberId = body.member_id == null ? null : Number(body.member_id);
+  if (memberId != null) {
+    if (!(await env.DB.prepare('SELECT 1 FROM members WHERE id=?').bind(memberId).first())) fail(404, 'Member not found');
+    if (await env.DB.prepare('SELECT 1 FROM accounts WHERE member_id=? AND id<>? AND status<>?').bind(memberId, a.id, 'disabled').first()) fail(409, 'Member already linked to another account');
+  }
+  await env.DB.prepare('UPDATE accounts SET member_id=?, status=? WHERE id=?').bind(memberId, memberId == null ? 'pending' : 'active', a.id).run();
+  return { ok: true };
+}, { admin: true });
+route('POST', '/api/accounts/:id/status', async ({ env, params, body }) => {
+  const st = String(body.status || '');
+  if (!['pending', 'active', 'disabled'].includes(st)) fail(400, 'Bad status');
+  await env.DB.prepare('UPDATE accounts SET status=? WHERE id=?').bind(st, params.id).run();
+  return { ok: true };
+}, { admin: true });
 
 // Booking: customer side (pass link token) and staff side.
 const bkRun = async (fn) => {

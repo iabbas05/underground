@@ -27,6 +27,18 @@ jobs:
         run: tools/ci_build.sh app ug_app com.underground.staff "UNDERGROUND Staff" UNDERGROUND-Staff.apk version.json
       - name: Build customer app
         run: tools/ci_build.sh customer_app ug_member com.underground.member "UNDERGROUND" UNDERGROUND-Member.apk member-version.json
+      - name: Publish build logs to a branch (readable without downloads)
+        if: always()
+        run: |
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          rm -rf /tmp/logs && mkdir /tmp/logs && cp -r logs/. /tmp/logs/ 2>/dev/null || true
+          for f in /tmp/logs/*.build.txt; do [ -f "$f" ] && tail -n 200 "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
+          git checkout --orphan build-logs
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -r /tmp/logs/. .
+          git add -A
+          git commit -m "build logs" || true
+          git push -f origin build-logs
       - uses: actions/upload-artifact@v4
         with:
           name: UNDERGROUND-apks

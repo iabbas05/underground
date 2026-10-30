@@ -52,7 +52,8 @@ const _s = <String, Map<String, String>>{
     'today': 'اليوم', 'tomorrow': 'غداً', 'book': 'احجز', 'waitjoin': 'قائمة الانتظار', 'full': 'مكتمل', 'free': 'متاح',
     'cancel_booking': 'إلغاء الحجز', 'booked': 'تم الحجز', 'onwait': 'في قائمة الانتظار', 'accept': 'تأكيد', 'decline': 'رفض',
     'closed': 'انتهى التسجيل', 'attended': 'حضرت', 'toolate': 'الإلغاء قبل ساعة على الأقل', 'paused': 'الحجز موقوف حتى',
-    'strikes': 'إلغاءات متتالية', 'g_hint': 'للحجز وعرض بطاقتك اربط حسابك', 'g_link': 'ربط حسابي', 'g_need': 'اربط حسابك أولاً للحجز', 'g_classes': 'الحصص', 'g_info': 'الفروع', 'g_pass': 'بطاقتي', 'g_pass_body': 'اربط حسابك لعرض بطاقة الدخول والاشتراك.', 'g_branch': 'اختر الفرع', 'g_seats': 'مقعد متاح', 'back': 'رجوع', 'bell': 'الإشعارات', 'nonotif': 'لا توجد إشعارات', 'wait_n': 'بالانتظار', 'err': 'حدث خطأ',
+    'strikes': 'إلغاءات متتالية', 'g_hint': 'للحجز وعرض بطاقتك سجّل الدخول', 'g_link': 'تسجيل الدخول', 'g_need': 'سجّل الدخول أولاً للحجز', 'g_classes': 'الحصص', 'g_info': 'الفروع', 'g_pass': 'بطاقتي', 'g_pass_body': 'اربط حسابك لعرض بطاقة الدخول والاشتراك.', 'g_branch': 'اختر الفرع', 'g_seats': 'مقعد متاح', 'back': 'رجوع', 'bell': 'الإشعارات', 'nonotif': 'لا توجد إشعارات', 'wait_n': 'بالانتظار', 'err': 'حدث خطأ',
+    'acct': 'حسابي', 'login': 'تسجيل الدخول', 'signup': 'إنشاء حساب', 'username': 'اسم المستخدم', 'password': 'كلمة المرور (8 أحرف على الأقل)', 'fullname': 'الاسم', 'phone': 'رقم الهاتف', 'have_acc': 'عندي حساب', 'no_acc': 'ما عندي حساب', 'pending_msg': 'حسابك قيد المراجعة. إذا كنت مشتركاً، أدخل كود الربط من الموظف أو انتظر تفعيل الإدارة.', 'link_code': 'كود الربط من الموظف', 'send_code': 'إرسال الرمز', 'verify': 'تأكيد', 'email': 'البريد الإلكتروني', 'otp': 'رمز التحقق', 'email_ok': 'تم توثيق البريد', 'logout': 'تسجيل الخروج', 'sub_none': 'لا يوجد اشتراك مرتبط بهذا الحساب', 'sub_expired': 'اشتراكك منتهي', 'addr': 'العنوان', 'hours': 'ساعات العمل', 'call': 'اتصال', 'map': 'الخريطة', 'view_classes': 'عرض الحصص', 'done': 'تم',
   },
   'en': {
     'pass': 'Pass', 'me': 'Membership', 'cls': 'Classes',
@@ -77,6 +78,7 @@ const _s = <String, Map<String, String>>{
     'cancel_booking': 'Cancel booking', 'booked': 'Booked', 'onwait': 'On the waitlist', 'accept': 'Confirm', 'decline': 'Decline',
     'closed': 'Closed', 'attended': 'Attended', 'toolate': 'Cancel at least 1 hour before', 'paused': 'Booking paused until',
     'strikes': 'cancellations in a row', 'bell': 'Notifications', 'nonotif': 'No notifications', 'wait_n': 'waiting', 'err': 'Something went wrong',
+    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
   },
 };
 String t(String k) => _s[lang.value]![k] ?? k;
@@ -117,6 +119,57 @@ Future<Map<String, dynamic>> postJson(String path, Map<String, dynamic> body) as
   throw (d is Map && d['error'] is String) ? d['error'] as String : t('err');
 }
 
+
+String? custToken;
+final ValueNotifier<Map<String, dynamic>?> acctN = ValueNotifier<Map<String, dynamic>?>(null);
+
+Future<Map<String, dynamic>> authCall(String method, String path, [Map<String, dynamic>? body]) async {
+  http.Response res;
+  final h = {'Content-Type': 'application/json', if (custToken != null) 'Authorization': 'Bearer $custToken'};
+  try {
+    final u = Uri.parse('$base$path');
+    res = await (method == 'GET' ? http.get(u, headers: h) : http.post(u, headers: h, body: jsonEncode(body ?? {}))).timeout(const Duration(seconds: 20));
+  } catch (_) {
+    throw t('net');
+  }
+  dynamic d;
+  try {
+    d = jsonDecode(utf8.decode(res.bodyBytes));
+  } catch (_) {}
+  if (res.statusCode == 200 && d is Map) return Map<String, dynamic>.from(d);
+  if (res.statusCode == 401 && custToken != null && path == '/api/customer/me') await clearAccount();
+  throw (d is Map && d['error'] is String) ? d['error'] as String : t('err');
+}
+
+Future<void> clearAccount() async {
+  custToken = null;
+  acctN.value = null;
+  final p = await SharedPreferences.getInstance();
+  await p.remove('ctoken');
+}
+
+/// Stores the account answer; an activated subscriber gets the pass screen automatically.
+Future<void> applyAccount(Map<String, dynamic> r) async {
+  final p = await SharedPreferences.getInstance();
+  if (r['token'] is String) {
+    custToken = r['token'] as String;
+    await p.setString('ctoken', custToken!);
+  }
+  acctN.value = {'account': r['account'], 'subscription': r['subscription'], 'member': r['member']};
+  final m = r['member'];
+  if (m is Map && m['pass_token'] is String) {
+    await p.setString('token', m['pass_token'] as String);
+    tokenN.value = m['pass_token'] as String;
+  }
+}
+
+Future<void> refreshAccount() async {
+  if (custToken == null) return;
+  try {
+    await applyAccount(await authCall('GET', '/api/customer/me'));
+  } catch (_) {}
+}
+
 /// Pulls (server, token) out of a pass link such as https://admin.gossipbh.com/m/UGS.12.1.abcd
 ({String base, String token})? parseLink(String text) {
   final m = RegExp(r'(https?://[^\s/]+)/m/([A-Za-z0-9._\-]+)').firstMatch(text);
@@ -148,7 +201,9 @@ Future<void> main() async {
   lang.value = p.getString('lang') ?? 'ar';
   base = p.getString('base') ?? _defaultBase;
   tokenN.value = p.getString('token');
+  custToken = p.getString('ctoken');
   runApp(const MemberApp());
+  refreshAccount();
 }
 
 class MemberApp extends StatelessWidget {
@@ -227,7 +282,8 @@ class _GuestHomeState extends State<GuestHome> {
     }
   }
 
-  void toLink() => Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkScreen(canBack: true)));
+  void toLink() => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+  void toPassLink() => Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkScreen(canBack: true)));
 
   String bname(Map b) => lang.value == 'ar' ? ((b['name_ar'] ?? b['name']) as String) : (b['name'] as String);
 
@@ -308,15 +364,56 @@ class _GuestHomeState extends State<GuestHome> {
               icon: const Icon(Icons.link),
               label: Text(t('g_link')),
             ),
+            TextButton(onPressed: toPassLink, child: Text(t('link_title'))),
           ]),
         ),
       );
 
+  Future<void> openUrl(String u) async {
+    try {
+      await launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   Widget infoView() => ListView(padding: const EdgeInsets.all(18), children: [
         brand(),
         const SizedBox(height: 20),
-        for (final b in branches)
-          Card(color: _panel, child: ListTile(leading: const Icon(Icons.place_outlined, color: _violetSoft), title: Text(bname(Map<String, dynamic>.from(b as Map))))),
+        for (final raw in branches)
+          Builder(builder: (context) {
+            final b = Map<String, dynamic>.from(raw as Map);
+            final ar = lang.value == 'ar';
+            final addr = ((ar ? (b['address_ar'] ?? b['address']) : (b['address'] ?? b['address_ar'])) ?? '').toString();
+            final hrs = ((ar ? (b['hours_ar'] ?? b['hours']) : (b['hours'] ?? b['hours_ar'])) ?? '').toString();
+            final ph = (b['phone'] ?? '').toString();
+            final map = (b['map_url'] ?? '').toString();
+            return Card(
+              color: _panel,
+              margin: const EdgeInsets.only(bottom: 14),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const Icon(Icons.place_outlined, color: _violetSoft),
+                    const SizedBox(width: 8),
+                    Text(bname(b), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  ]),
+                  if (addr.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: Text('${t('addr')}: $addr', style: const TextStyle(color: _mute))),
+                  if (hrs.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text('${t('hours')}: $hrs', style: const TextStyle(color: _mute))),
+                  const SizedBox(height: 12),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    if (ph.isNotEmpty) OutlinedButton.icon(onPressed: () => openUrl('tel:$ph'), icon: const Icon(Icons.call, size: 18), label: Text(t('call'))),
+                    if (map.isNotEmpty) OutlinedButton.icon(onPressed: () => openUrl(map), icon: const Icon(Icons.map_outlined, size: 18), label: Text(t('map'))),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: _violet),
+                      onPressed: () { setState(() => tab = 0); pick(b['id'] as int); },
+                      icon: const Icon(Icons.fitness_center, size: 18),
+                      label: Text(t('view_classes')),
+                    ),
+                  ]),
+                ]),
+              ),
+            );
+          }),
       ]);
 
   @override
@@ -325,7 +422,7 @@ class _GuestHomeState extends State<GuestHome> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text('UNDERGROUND', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 18)),
-        actions: [TextButton(onPressed: () => setLang(lang.value == 'ar' ? 'en' : 'ar'), child: Text(t('lang')))],
+        actions: [IconButton(tooltip: t('acct'), icon: const Icon(Icons.account_circle_outlined), onPressed: toLink), TextButton(onPressed: () => setLang(lang.value == 'ar' ? 'en' : 'ar'), child: Text(t('lang')))],
       ),
       body: tab == 0 ? classesView() : tab == 1 ? infoView() : passView(),
       bottomNavigationBar: NavigationBar(
@@ -337,6 +434,191 @@ class _GuestHomeState extends State<GuestHome> {
           NavigationDestination(icon: const Icon(Icons.place_outlined), label: t('g_info')),
           NavigationDestination(icon: const Icon(Icons.qr_code_2), label: t('g_pass')),
         ],
+      ),
+    );
+  }
+}
+
+
+class AccountScreen extends StatefulWidget {
+  const AccountScreen({super.key});
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
+  bool signup = false;
+  bool busy = false;
+  String? msg;
+  bool msgOk = false;
+  bool otpSent = false;
+  final user = TextEditingController();
+  final pass = TextEditingController();
+  final name = TextEditingController();
+  final phone = TextEditingController();
+  final code = TextEditingController();
+  final email = TextEditingController();
+  final otp = TextEditingController();
+
+  void _leaveWhenPass() {
+    if (tokenN.value != null && mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    tokenN.addListener(_leaveWhenPass);
+    refreshAccount();
+  }
+
+  @override
+  void dispose() {
+    tokenN.removeListener(_leaveWhenPass);
+    super.dispose();
+  }
+
+  Future<void> run(Future<void> Function() f, {String? ok}) async {
+    setState(() { busy = true; msg = null; });
+    try {
+      await f();
+      if (!mounted) return;
+      setState(() { msg = ok; msgOk = ok != null; });
+    } catch (e) {
+      if (mounted) setState(() { msg = e.toString() == 'net' ? t('net') : e.toString(); msgOk = false; });
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> submit() async {
+    await run(() async {
+      final r = signup
+          ? await authCall('POST', '/api/customer/signup', {'username': user.text.trim(), 'password': pass.text, 'name': name.text.trim(), 'phone': phone.text.trim()})
+          : await authCall('POST', '/api/customer/login', {'username': user.text.trim(), 'password': pass.text});
+      await applyAccount(r);
+    });
+  }
+
+  Widget field(TextEditingController c, String label, {bool secret = false, TextInputType? kb}) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(controller: c, obscureText: secret, keyboardType: kb, autocorrect: false, decoration: InputDecoration(labelText: label, border: const OutlineInputBorder())),
+      );
+
+  Widget statusMsg() => msg == null ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(msg!, style: TextStyle(color: msgOk ? _ok : _bad)));
+
+  Widget authForm() => ListView(padding: const EdgeInsets.all(22), children: [
+        brand(),
+        const SizedBox(height: 24),
+        Text(t(signup ? 'signup' : 'login'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 14),
+        if (signup) field(name, t('fullname')),
+        field(user, t('username')),
+        if (signup) field(phone, t('phone'), kb: TextInputType.phone),
+        field(pass, t('password'), secret: true),
+        statusMsg(),
+        FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: _violet),
+          onPressed: busy ? null : submit,
+          child: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t(signup ? 'signup' : 'login')),
+        ),
+        TextButton(onPressed: () => setState(() { signup = !signup; msg = null; }), child: Text(t(signup ? 'have_acc' : 'no_acc'))),
+      ]);
+
+  Widget accountView(Map<String, dynamic> d) {
+    final a = Map<String, dynamic>.from(d['account'] as Map);
+    final sub = d['subscription'] as String? ?? 'none';
+    final m = d['member'] is Map ? Map<String, dynamic>.from(d['member'] as Map) : null;
+    final ar = lang.value == 'ar';
+    return ListView(padding: const EdgeInsets.all(22), children: [
+      Card(
+        color: _panel,
+        child: ListTile(
+          leading: const Icon(Icons.person, color: _violetSoft),
+          title: Text(a['name'] as String, style: const TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: Text('@${a['username']}  ·  ${a['phone']}'),
+        ),
+      ),
+      const SizedBox(height: 8),
+      if (m != null)
+        Card(
+          color: _panel,
+          child: ListTile(
+            leading: Icon(sub == 'active' ? Icons.check_circle : Icons.warning_amber, color: sub == 'active' ? _ok : _warn),
+            title: Text((ar ? (m['plan_ar'] ?? m['plan']) : m['plan']).toString()),
+            subtitle: Text('${ar ? (m['branch_ar'] ?? m['branch']) : m['branch']}  ·  ${t('ends')} ${m['end_date']}'),
+          ),
+        ),
+      if (a['status'] != 'active' || m == null) ...[
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: _warn.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+          child: Text(m == null ? t('pending_msg') : t('sub_expired'), style: const TextStyle(color: _warn)),
+        ),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: TextField(controller: code, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t('link_code'), border: const OutlineInputBorder()))),
+          const SizedBox(width: 8),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: _violet, minimumSize: const Size(80, 56)),
+            onPressed: busy ? null : () => run(() async => applyAccount(await authCall('POST', '/api/customer/link', {'code': code.text.trim()}))),
+            child: Text(t('link_btn')),
+          ),
+        ]),
+      ],
+      const SizedBox(height: 20),
+      if (a['email_verified'] == true)
+        Row(children: [const Icon(Icons.verified, color: _ok, size: 18), const SizedBox(width: 6), Text('${t('email_ok')}: ${a['email']}')])
+      else ...[
+        Row(children: [
+          Expanded(child: TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(labelText: t('email'), border: const OutlineInputBorder()))),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(80, 56)),
+            onPressed: busy ? null : () => run(() async {
+              await authCall('POST', '/api/customer/email', {'email': email.text.trim()});
+              otpSent = true;
+            }, ok: t('done')),
+            child: Text(t('send_code')),
+          ),
+        ]),
+        if (otpSent) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: TextField(controller: otp, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t('otp'), border: const OutlineInputBorder()))),
+            const SizedBox(width: 8),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _violet, minimumSize: const Size(80, 56)),
+              onPressed: busy ? null : () => run(() async {
+                await authCall('POST', '/api/customer/email/verify', {'code': otp.text.trim()});
+                await refreshAccount();
+              }, ok: t('email_ok')),
+              child: Text(t('verify')),
+            ),
+          ]),
+        ],
+      ],
+      const SizedBox(height: 12),
+      statusMsg(),
+      const SizedBox(height: 12),
+      OutlinedButton(
+        onPressed: () async {
+          await clearAccount();
+          final p = await SharedPreferences.getInstance();
+          await p.remove('token');
+          tokenN.value = null;
+        },
+        child: Text(t('logout')),
+      ),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(t('acct'))),
+      body: ValueListenableBuilder<Map<String, dynamic>?>(
+        valueListenable: acctN,
+        builder: (context, d, _) => d == null ? authForm() : accountView(d),
       ),
     );
   }
@@ -574,6 +856,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (ok != true) return;
     final p = await SharedPreferences.getInstance();
     await p.remove('token');
+    await p.remove('ctoken');
+    custToken = null;
+    acctN.value = null;
     tokenN.value = null;
   }
 

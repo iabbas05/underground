@@ -31,8 +31,10 @@ open(m, 'w').write(s)
 PY
 grep -n "applicationId" android/app/build.gradle* || true
 echo "const int appBuild = $BUILD;" > lib/build_info.dart
+mkdir -p "$ROOT/logs"
 flutter pub get
-flutter build apk --release
+flutter analyze --no-fatal-infos --no-fatal-warnings > "$ROOT/logs/$NAME.analyze.txt" 2>&1 || true
+flutter build apk --release 2>&1 | tee "$ROOT/logs/$NAME.build.txt"
 mkdir -p "$ROOT/dist"
 cp build/app/outputs/flutter-apk/app-release.apk "$ROOT/dist/$OUT"
 echo "{\"build\":$BUILD,\"notes\":\"${NOTES:-}\"}" > "$ROOT/dist/$VJ"
