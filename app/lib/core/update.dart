@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ota_update/ota_update.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../build_info.dart';
@@ -32,8 +33,62 @@ Future<void> showUpdateDialog(BuildContext context, Map<String, dynamic> r) asyn
       ],
     ),
   );
-  if (go == true) {
-    await launchUrl(Uri.parse(r['url'] as String), mode: LaunchMode.externalApplication);
+  if (go == true && context.mounted) await installUpdate(context, r['url'] as String);
+}
+
+/// Downloads the new APK inside the app (with a percentage) and opens the system installer.
+/// If anything goes wrong it falls back to opening the download link in the browser.
+Future<void> installUpdate(BuildContext context, String url) async {
+  final prog = ValueNotifier<String>('0%');
+  final nav = Navigator.of(context, rootNavigator: true);
+  var open = true;
+  void closeDialog() {
+    if (open) {
+      open = false;
+      nav.pop();
+    }
+  }
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => PopScope(
+      canPop: false,
+      child: AlertDialog(
+        content: ValueListenableBuilder<String>(
+          valueListenable: prog,
+          builder: (_, v, __) => Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(tr('update_downloading')),
+            const SizedBox(height: 14),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(v),
+          ]),
+        ),
+      ),
+    ),
+  );
+  try {
+    OtaUpdate().execute(url, destinationFilename: 'UNDERGROUND-Staff.apk').listen(
+      (e) {
+        if (e.status == OtaStatus.DOWNLOADING) {
+          prog.value = '${e.value}%';
+        } else if (e.status == OtaStatus.INSTALLING || e.status == OtaStatus.INSTALLATION_DONE || e.status == OtaStatus.CANCELED) {
+          closeDialog();
+        } else if (e.status.name.contains('ERROR')) {
+          closeDialog();
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        }
+      },
+      onError: (_) {
+        closeDialog();
+        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      },
+      onDone: closeDialog,
+    );
+  } catch (_) {
+    closeDialog();
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 }
 

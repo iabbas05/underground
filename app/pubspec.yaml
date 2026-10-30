@@ -17,6 +17,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: any
   url_launcher: ^6.3.0
+  ota_update: any
 
 dev_dependencies:
   flutter_test:
