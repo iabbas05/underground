@@ -1,64 +1,3 @@
-  Future<void> book(String time) async {
-    if (custToken == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('need_login2'))));
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
-      return;
-    }
-    final ar = lang.value == 'ar';
-    final sv = Map<String, dynamic>.from(services[si] as Map);
-    final b = Map<String, dynamic>.from(branches[bi] as Map);
-    final kind = sv['kind'] as String;
-    final haveCredit = credits.any((c) => (c as Map)['kind'] == kind && ((c['remaining'] as num) > 0));
-    final price = sv['price'] == null ? '' : '${(sv['price'] as num).toStringAsFixed(1)} ${t('bd')}';
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _panel,
-        title: Text(t('confirm_q')),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${t(kind)}  ·  ${sv['slot_minutes']} ${t('slot_min')}', style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
-          Text('${t('branch_l')}: ${bn(b)}'),
-          Text('${t('date_l')}: $date'),
-          Text('${t('time_l')}: $time'),
-          const SizedBox(height: 6),
-          Text(haveCredit ? t('from_package') : (price.isEmpty ? t('pay_at_desk') : '$price  ·  ${t('pay_at_desk')}'), style: TextStyle(color: haveCredit ? _ok : _violetSoft)),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('confirm_book'))),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      final br = await authCall('POST', '/api/customer/recovery/book', {'service_id': sv['id'], 'date': date, 'time': time});
-      if (mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: _panel,
-            title: Row(children: [const Icon(Icons.check_circle, color: _ok), const SizedBox(width: 8), Expanded(child: Text(t('book_done')))]),
-            content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${t('ref')}: ${br['ref']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              const SizedBox(height: 6),
-              Text('${t(kind)}  ·  ${ar ? (br['branch_ar'] ?? br['branch']) : br['branch']}'),
-              Text('${br['date']}  ${br['time']}'),
-              if (br['used_credit'] == true) Padding(padding: const EdgeInsets.only(top: 6), child: Text(t('used_credit'), style: const TextStyle(color: _ok))),
-              const SizedBox(height: 10),
-              Text(t('arrive_early'), style: const TextStyle(color: _mute, fontSize: 12)),
-            ]),
-            actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(t('done')))],
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-    await loadSlots();
-    await loadMine();
-  }
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -883,9 +822,54 @@ class _RecoveryViewState extends State<RecoveryView> {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
       return;
     }
+    final ar = lang.value == 'ar';
+    final sv = Map<String, dynamic>.from(services[si] as Map);
+    final b = Map<String, dynamic>.from(branches[bi] as Map);
+    final kind = sv['kind'] as String;
+    final haveCredit = credits.any((c) => (c as Map)['kind'] == kind && ((c['remaining'] as num) > 0));
+    final price = sv['price'] == null ? '' : '${(sv['price'] as num).toStringAsFixed(1)} ${t('bd')}';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _panel,
+        title: Text(t('confirm_q')),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${t(kind)}  ·  ${sv['slot_minutes']} ${t('slot_min')}', style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('${t('branch_l')}: ${bn(b)}'),
+          Text('${t('date_l')}: $date'),
+          Text('${t('time_l')}: $time'),
+          const SizedBox(height: 6),
+          Text(haveCredit ? t('from_package') : (price.isEmpty ? t('pay_at_desk') : '$price  ·  ${t('pay_at_desk')}'), style: TextStyle(color: haveCredit ? _ok : _violetSoft)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('confirm_book'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
     try {
-      final br = await authCall('POST', '/api/customer/recovery/book', {'service_id': (services[si] as Map)['id'], 'date': date, 'time': time});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(br['used_credit'] == true ? t('used_credit') : t('booked_ok'))));
+      final br = await authCall('POST', '/api/customer/recovery/book', {'service_id': sv['id'], 'date': date, 'time': time});
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _panel,
+            title: Row(children: [const Icon(Icons.check_circle, color: _ok), const SizedBox(width: 8), Expanded(child: Text(t('book_done')))]),
+            content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${t('ref')}: ${br['ref']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+              const SizedBox(height: 6),
+              Text('${t(kind)}  ·  ${ar ? (br['branch_ar'] ?? br['branch']) : br['branch']}'),
+              Text('${br['date']}  ${br['time']}'),
+              if (br['used_credit'] == true) Padding(padding: const EdgeInsets.only(top: 6), child: Text(t('used_credit'), style: const TextStyle(color: _ok))),
+              const SizedBox(height: 10),
+              Text(t('arrive_early'), style: const TextStyle(color: _mute, fontSize: 12)),
+            ]),
+            actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(t('done')))],
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -998,7 +982,6 @@ class _RecoveryViewState extends State<RecoveryView> {
               color: _panel,
               child: ListTile(
                 title: Text('${t(m['kind'] as String)}  ·  ${m['date']}  ${m['time']}'),
-                isThreeLine: false,
                 subtitle: Text('${ar ? (m['branch_ar'] ?? m['branch']) : m['branch']}  ·  ${t('st_${m['status']}')}'),
                 trailing: m['status'] == 'booked'
                     ? TextButton(
