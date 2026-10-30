@@ -56,6 +56,7 @@ const _s = <String, Map<String, String>>{
     'acct': 'حسابي', 'login': 'تسجيل الدخول', 'signup': 'إنشاء حساب', 'username': 'اسم المستخدم', 'password': 'كلمة المرور (8 أحرف على الأقل)', 'fullname': 'الاسم', 'phone': 'رقم الهاتف', 'have_acc': 'عندي حساب', 'no_acc': 'ما عندي حساب', 'pending_msg': 'حسابك قيد المراجعة. إذا كنت مشتركاً، أدخل كود الربط من الموظف أو انتظر تفعيل الإدارة.', 'link_code': 'كود الربط من الموظف', 'send_code': 'إرسال الرمز', 'verify': 'تأكيد', 'email': 'البريد الإلكتروني', 'otp': 'رمز التحقق', 'email_ok': 'تم توثيق البريد', 'logout': 'تسجيل الخروج', 'sub_none': 'لا يوجد اشتراك مرتبط بهذا الحساب', 'sub_expired': 'اشتراكك منتهي', 'addr': 'العنوان', 'hours': 'ساعات العمل', 'call': 'اتصال', 'map': 'الخريطة', 'view_classes': 'عرض الحصص', 'done': 'تم',
     'store': 'الماركت', 'cart': 'السلة', 'order_now': 'اطلب (الدفع عند الاستلام)', 'sold_out': 'نفدت الكمية', 'left_n': 'متبقي', 'goal_all': 'الكل', 'goal_muscle': 'بناء عضل', 'goal_cut': 'تنشيف', 'goal_light': 'خفيف', 'suggested': 'مقترح لك', 'cal': 'سعرة', 'prot': 'بروتين', 'my_orders': 'طلباتي', 'order_sent': 'تم إرسال الطلب، بانتظار موافقة الموظف. الدفع عند الاستلام.', 'st_pending': 'بانتظار الموافقة', 'st_approved': 'تمت الموافقة', 'st_ready': 'جاهز للاستلام', 'st_picked': 'تم الاستلام', 'st_rejected': 'مرفوض', 'st_cancelled': 'ملغي', 'need_login': 'سجّل الدخول أولاً للطلب', 'bd': 'د.ب', 'note': 'ملاحظة (اختياري)', 'empty_menu': 'لا توجد منتجات متاحة اليوم',
     'well': 'الاستشفاء والتقدّم', 'recovery': 'الاستشفاء', 'progress': 'تقدّمي', 'sauna': 'ساونا', 'massage': 'مساج', 'slot_min': 'دقيقة', 'seats_n': 'متاح', 'book_slot': 'حجز', 'booked_ok': 'تم الحجز', 'my_rec': 'حجوزاتي', 'st_booked': 'محجوز', 'st_attended': 'حضرت', 'st_no_show': 'لم تحضر', 'cancel_rec_q': 'إلغاء الحجز؟', 'weight': 'الوزن (كجم)', 'height': 'الطول (سم)', 'body_fat': 'نسبة الدهون % (اختياري)', 'save_entry': 'حفظ القياس', 'bmi': 'مؤشر كتلة الجسم', 'bmi_under': 'نحيف', 'bmi_normal': 'طبيعي', 'bmi_over': 'وزن زائد', 'bmi_obese': 'سمنة', 'change': 'التغيّر', 'history': 'السجل', 'need_login2': 'سجّل الدخول لحفظ قياساتك وحجوزاتك', 'no_slots': 'لا توجد أوقات', 'price': 'السعر',
+    'challenges': 'التحديات', 'ch_none': 'لا توجد تحديات هذا الشهر', 'ch_done': 'أنجزت التحدي', 'ch_link': 'اربط اشتراكك لتتبع تقدمك في التحديات', 'ch_board': 'المتصدرون', 'ch_visits': 'يوم حضور', 'ch_classes': 'حصة', 'freeze': 'تجميد الاشتراك', 'freeze_days': 'مدة التجميد (يوم)', 'freeze_send': 'إرسال الطلب', 'freeze_sent': 'تم إرسال الطلب، بانتظار موافقة الإدارة', 'frozen_until': 'اشتراكك مجمّد حتى', 'sub_frozen': 'مجمّد',
   },
   'en': {
     'pass': 'Pass', 'me': 'Membership', 'cls': 'Classes',
@@ -80,7 +81,8 @@ const _s = <String, Map<String, String>>{
     'cancel_booking': 'Cancel booking', 'booked': 'Booked', 'onwait': 'On the waitlist', 'accept': 'Confirm', 'decline': 'Decline',
     'closed': 'Closed', 'attended': 'Attended', 'toolate': 'Cancel at least 1 hour before', 'paused': 'Booking paused until',
     'strikes': 'cancellations in a row', 'bell': 'Notifications', 'nonotif': 'No notifications', 'wait_n': 'waiting', 'err': 'Something went wrong',
-    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today', 'well': 'Recovery & progress', 'recovery': 'Recovery', 'progress': 'My progress', 'sauna': 'Sauna', 'massage': 'Massage', 'slot_min': 'min', 'seats_n': 'left', 'book_slot': 'Book', 'booked_ok': 'Booked', 'my_rec': 'My bookings', 'st_booked': 'Booked', 'st_attended': 'Attended', 'st_no_show': 'No show', 'cancel_rec_q': 'Cancel this booking?', 'weight': 'Weight (kg)', 'height': 'Height (cm)', 'body_fat': 'Body fat % (optional)', 'save_entry': 'Save measurement', 'bmi': 'BMI', 'bmi_under': 'Underweight', 'bmi_normal': 'Normal', 'bmi_over': 'Overweight', 'bmi_obese': 'Obese', 'change': 'Change', 'history': 'History', 'need_login2': 'Log in to save your measurements and bookings', 'no_slots': 'No time slots', 'price': 'Price',
+    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today', 'well': 'Recovery & progress', 'recovery': 'Recovery', 'progress': 'My progress', 'sauna': 'Sauna', 'massage': 'Massage', 'slot_min': 'min', 'seats_n': 'left', 'book_slot': 'Book', 'booked_ok': 'Booked', 'my_rec': 'My bookings', 'st_booked': 'Booked', 'st_attended': 'Attended', 'st_no_show': 'No show', 'cancel_rec_q': 'Cancel this booking?', 'weight': 'Weight (kg)', 'height': 'Height (cm)', 'body_fat': 'Body fat % (optional)', 'save_entry': 'Save measurement', 'bmi': 'BMI', 'bmi_under': 'Underweight', 'bmi_normal': 'Normal', 'bmi_over': 'Overweight', 'bmi_obese': 'Obese', 'change': 'Change', 'history': 'History', 'need_login2': 'Log in to save your measurements and bookings', 'no_slots': 'No time slots', 'price': 'Price', 'challenges': 'Challenges', 'ch_none': 'No challenges this month', 'ch_done': 'Challenge completed', 'ch_link': 'Link your membership to track challenge progress', 'ch_board': 'Leaderboard', 'ch_visits': 'days attended', 'ch_classes': 'classes', 'freeze': 'Freeze membership', 'freeze_days': 'Freeze length (days)', 'freeze_send': 'Send request', 'freeze_sent': 'Request sent, waiting for admin approval', 'frozen_until': 'Your membership is frozen until', 'sub_frozen': 'Frozen',
+
 
  'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
   },
@@ -658,20 +660,20 @@ class WellnessScreen extends StatefulWidget {
 }
 
 class _WellnessScreenState extends State<WellnessScreen> {
-  bool progress = false;
+  int seg = 0;
   @override
   Widget build(BuildContext context) {
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
-        child: SegmentedButton<bool>(
+        child: SegmentedButton<int>(
           showSelectedIcon: false,
-          segments: [ButtonSegment(value: false, label: Text(t('recovery'))), ButtonSegment(value: true, label: Text(t('progress')))],
-          selected: {progress},
-          onSelectionChanged: (s) => setState(() => progress = s.first),
+          segments: [ButtonSegment(value: 0, label: Text(t('recovery'))), ButtonSegment(value: 1, label: Text(t('progress'))), ButtonSegment(value: 2, label: Text(t('challenges')))],
+          selected: {seg},
+          onSelectionChanged: (s) => setState(() => seg = s.first),
         ),
       ),
-      Expanded(child: progress ? const ProgressView() : const RecoveryView()),
+      Expanded(child: seg == 1 ? const ProgressView() : seg == 2 ? const ChallengesView() : const RecoveryView()),
     ]);
   }
 }
@@ -847,6 +849,91 @@ class _RecoveryViewState extends State<RecoveryView> {
   }
 }
 
+class ChallengesView extends StatefulWidget {
+  const ChallengesView({super.key});
+  @override
+  State<ChallengesView> createState() => _ChallengesViewState();
+}
+
+class _ChallengesViewState extends State<ChallengesView> {
+  Map<String, dynamic>? data;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    if (custToken == null) return;
+    try {
+      final r = await authCall('GET', '/api/customer/challenges');
+      if (mounted) setState(() => data = r);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (custToken == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(t('need_login2'), textAlign: TextAlign.center, style: const TextStyle(color: _mute)),
+            const SizedBox(height: 16),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _violet),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen())).then((_) => load()),
+              child: Text(t('login')),
+            ),
+          ]),
+        ),
+      );
+    }
+    final items = (data?['items'] as List<dynamic>? ?? []);
+    final ar = lang.value == 'ar';
+    return ListView(padding: const EdgeInsets.all(18), children: [
+      if (data != null && data!['linked'] != true)
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(color: _warn.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+          child: Text(t('ch_link'), style: const TextStyle(color: _warn)),
+        ),
+      if (data != null && items.isEmpty) Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(t('ch_none'), style: const TextStyle(color: _mute)))),
+      for (final raw in items)
+        Builder(builder: (context) {
+          final c = Map<String, dynamic>.from(raw as Map);
+          final target = (c['target'] as num).toInt();
+          final count = (c['count'] as num).toInt();
+          final board = (c['board'] as List<dynamic>);
+          return Card(
+            color: _panel,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: Text((ar ? c['title_ar'] : c['title']).toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+                  if (c['done'] == true) const Icon(Icons.emoji_events, color: _warn),
+                ]),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(value: (count / target).clamp(0.0, 1.0), minHeight: 8, color: c['done'] == true ? _ok : _violet, backgroundColor: _line),
+                const SizedBox(height: 6),
+                Text('$count / $target ${t(c['metric'] == 'classes' ? 'ch_classes' : 'ch_visits')}${c['done'] == true ? '  ·  ${t('ch_done')}' : ''}', style: const TextStyle(color: _mute, fontSize: 12)),
+                if (board.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(t('ch_board'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  for (var i = 0; i < board.length; i++) Text('${i + 1}.  ${(board[i] as Map)['name']}  ·  ${(board[i] as Map)['n']}', style: const TextStyle(color: _mute)),
+                ],
+              ]),
+            ),
+          );
+        }),
+    ]);
+  }
+}
+
 class ProgressView extends StatefulWidget {
   const ProgressView({super.key});
   @override
@@ -987,6 +1074,7 @@ class _AccountScreenState extends State<AccountScreen> {
   String? msg;
   bool msgOk = false;
   bool otpSent = false;
+  int freezeDays = 7;
   final user = TextEditingController();
   final pass = TextEditingController();
   final name = TextEditingController();
@@ -1083,6 +1171,18 @@ class _AccountScreenState extends State<AccountScreen> {
             subtitle: Text('${ar ? (m['branch_ar'] ?? m['branch']) : m['branch']}  ·  ${t('ends')} ${m['end_date']}'),
           ),
         ),
+      if (m != null && sub == 'frozen')
+        Padding(padding: const EdgeInsets.only(top: 8), child: Text('${t('frozen_until')} ${m['frozen_until']}', style: const TextStyle(color: _warn))),
+      if (m != null && a['status'] == 'active' && sub == 'active') ...[
+        const SizedBox(height: 12),
+        Row(children: [
+          Text(t('freeze_days')),
+          const SizedBox(width: 10),
+          DropdownButton<int>(value: freezeDays, items: [for (final d in const [7, 14, 21, 30]) DropdownMenuItem(value: d, child: Text('$d'))], onChanged: (v) => setState(() => freezeDays = v ?? 7)),
+          const Spacer(),
+          OutlinedButton(onPressed: busy ? null : () => run(() async { await authCall('POST', '/api/customer/freeze', {'days': freezeDays}); }, ok: t('freeze_sent')), child: Text(t('freeze_send'))),
+        ]),
+      ],
       if (a['status'] != 'active' || m == null) ...[
         Container(
           padding: const EdgeInsets.all(14),

@@ -476,8 +476,8 @@ route('POST', '/api/gate/verify', async ({ request, env, body }) => {
     return { allow: false, reason: parsed.reason };
   }
   const m = uid
-    ? await env.DB.prepare('SELECT id,name,end_date,blocked,pass_ver,branch_id FROM members WHERE nfc_uid=?').bind(uid).first()
-    : await env.DB.prepare('SELECT id,name,end_date,blocked,pass_ver,branch_id FROM members WHERE id=?').bind(parsed.id).first();
+    ? await env.DB.prepare('SELECT id,name,end_date,blocked,pass_ver,branch_id,frozen_until FROM members WHERE nfc_uid=?').bind(uid).first()
+    : await env.DB.prepare('SELECT id,name,end_date,blocked,pass_ver,branch_id,frozen_until FROM members WHERE id=?').bind(parsed.id).first();
   if (uid) parsed.ver = m?.pass_ver;
   const deny = async (reason) => {
     await logGate(env, { member_id: m?.id, branch_id: branchId, gate, result: 'denied', reason, method: parsed.method, by_user: by });
@@ -486,6 +486,7 @@ route('POST', '/api/gate/verify', async ({ request, env, body }) => {
   if (!m) return deny('unknown');
   if (m.pass_ver !== parsed.ver) return deny('old_pass');
   if (m.blocked) return deny('blocked');
+  if (m.frozen_until && m.frozen_until >= today()) return deny('frozen');
   const left = daysBetween(today(), m.end_date);
   if (left < 0) return deny('expired');
   await logGate(env, { member_id: m.id, branch_id: branchId, gate, result: 'allowed', reason: 'ok', method: parsed.method, by_user: by });
@@ -627,11 +628,11 @@ async function accountView(env, a) {
   let member = null;
   let subscription = 'none';
   if (a.member_id) {
-    const m = await env.DB.prepare('SELECT m.id,m.name,m.end_date,m.blocked,m.pass_ver,m.branch_id,p.name AS plan,p.name_ar AS plan_ar,b.name AS branch,b.name_ar AS branch_ar FROM members m LEFT JOIN plans p ON p.id=m.plan_id LEFT JOIN branches b ON b.id=m.branch_id WHERE m.id=?').bind(a.member_id).first();
+    const m = await env.DB.prepare('SELECT m.id,m.name,m.end_date,m.blocked,m.frozen_until,m.pass_ver,m.branch_id,p.name AS plan,p.name_ar AS plan_ar,b.name AS branch,b.name_ar AS branch_ar FROM members m LEFT JOIN plans p ON p.id=m.plan_id LEFT JOIN branches b ON b.id=m.branch_id WHERE m.id=?').bind(a.member_id).first();
     if (m) {
       const left = daysBetween(today(), m.end_date);
-      subscription = m.blocked ? 'blocked' : left < 0 ? 'expired' : 'active';
-      member = { name: m.name, plan: m.plan, plan_ar: m.plan_ar, branch: m.branch, branch_ar: m.branch_ar, branch_id: m.branch_id, end_date: m.end_date, days_left: left };
+      subscription = m.blocked ? 'blocked' : left < 0 ? 'expired' : m.frozen_until && m.frozen_until >= today() ? 'frozen' : 'active';
+      member = { name: m.name, plan: m.plan, plan_ar: m.plan_ar, branch: m.branch, branch_ar: m.branch_ar, branch_id: m.branch_id, end_date: m.end_date, days_left: left, frozen_until: m.frozen_until && m.frozen_until >= today() ? m.frozen_until : null };
       if (a.status === 'active' && subscription !== 'blocked') member.pass_token = await staticCode(env.JWT_SECRET, m.id, m.pass_ver);
     }
   }
@@ -979,6 +980,101 @@ route('POST', '/api/customer/body/:id/delete', async ({ request, env, params }) 
   const a = await custAuth(request, env);
   await env.DB.prepare('DELETE FROM body_entries WHERE id=? AND account_id=?').bind(params.id, a.id).run();
   return { ok: true };
+}, { auth: false });
+
+/* ---------- freeze, peak hours, challenges ---------- */
+route('POST', '/api/customer/freeze', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  if (!a.member_id || a.status !== 'active') fail(403, 'Only linked members can freeze');
+  const days = Math.round(num(body.days, 'days'));
+  if (![7, 14, 21, 30].includes(days)) fail(400, 'days must be 7, 14, 21 or 30');
+  const m = await env.DB.prepare('SELECT end_date,frozen_until FROM members WHERE id=?').bind(a.member_id).first();
+  if (daysBetween(today(), m.end_date) < 7) fail(400, 'Membership is too close to its end date to freeze');
+  if (m.frozen_until && m.frozen_until >= today()) fail(409, 'Membership is already frozen');
+  if (await env.DB.prepare(`SELECT 1 FROM freeze_requests WHERE member_id=? AND status='pending'`).bind(a.member_id).first()) fail(409, 'You already have a request waiting');
+  if (await env.DB.prepare(`SELECT 1 FROM freeze_requests WHERE member_id=? AND status='approved' AND decided_at>=?`).bind(a.member_id, addDays(today(), -180)).first()) fail(409, 'One freeze is allowed every 6 months');
+  const r = await env.DB.prepare('INSERT INTO freeze_requests (member_id,account_id,days,reason,created_at) VALUES (?,?,?,?,?)').bind(a.member_id, a.id, days, str(body.reason, 'reason', { required: false, max: 200 }), nowTime()).run();
+  return { id: r.meta.last_row_id, status: 'pending' };
+}, { auth: false });
+route('GET', '/api/customer/freeze', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  if (!a.member_id) return { request: null, frozen_until: null };
+  const m = await env.DB.prepare('SELECT frozen_until FROM members WHERE id=?').bind(a.member_id).first();
+  const rq = await env.DB.prepare('SELECT id,days,status,created_at FROM freeze_requests WHERE member_id=? ORDER BY id DESC LIMIT 1').bind(a.member_id).first();
+  return { request: rq || null, frozen_until: m.frozen_until && m.frozen_until >= today() ? m.frozen_until : null };
+}, { auth: false });
+route('GET', '/api/freeze-requests', async ({ env, query }) => {
+  const st = query.get('status') || 'pending';
+  return { items: (await env.DB.prepare(`SELECT f.id,f.days,f.reason,f.status,f.created_at,m.id AS member_id,m.name,m.phone,m.end_date FROM freeze_requests f JOIN members m ON m.id=f.member_id WHERE f.status=? ORDER BY f.id DESC LIMIT 100`).bind(st).all()).results };
+}, { admin: true });
+route('POST', '/api/freeze-requests/:id/decide', async ({ env, params, body }) => {
+  const f = await env.DB.prepare(`SELECT * FROM freeze_requests WHERE id=? AND status='pending'`).bind(params.id).first();
+  if (!f) fail(404, 'Request not found');
+  if (body.approve === false) {
+    await env.DB.prepare(`UPDATE freeze_requests SET status='rejected', decided_at=? WHERE id=?`).bind(today(), f.id).run();
+    await bk.notify(env, f.member_id, 'freeze_no', {});
+    return { ok: true, status: 'rejected' };
+  }
+  const m = await env.DB.prepare('SELECT end_date FROM members WHERE id=?').bind(f.member_id).first();
+  const until = addDays(today(), f.days);
+  await env.DB.prepare('UPDATE members SET frozen_until=?, end_date=? WHERE id=?').bind(until, addDays(m.end_date, f.days), f.member_id).run();
+  await env.DB.prepare(`UPDATE freeze_requests SET status='approved', decided_at=? WHERE id=?`).bind(today(), f.id).run();
+  await bk.notify(env, f.member_id, 'freeze_ok', { days: f.days, until });
+  return { ok: true, status: 'approved', until };
+}, { admin: true });
+// Early end of a freeze: the unused frozen days are taken back off the end date.
+route('POST', '/api/members/:id/unfreeze', async ({ env, params }) => {
+  const m = await env.DB.prepare('SELECT end_date,frozen_until FROM members WHERE id=?').bind(params.id).first();
+  if (!m) fail(404, 'Member not found');
+  if (!m.frozen_until || m.frozen_until < today()) fail(400, 'Not frozen');
+  const unused = Math.max(0, daysBetween(today(), m.frozen_until));
+  await env.DB.prepare('UPDATE members SET frozen_until=NULL, end_date=? WHERE id=?').bind(addDays(m.end_date, -unused), params.id).run();
+  return { ok: true };
+}, { admin: true });
+
+route('GET', '/api/reports/peak', async ({ env, query }) => {
+  const to = isDate(query.get('to')) ? query.get('to') : today();
+  const from = isDate(query.get('from')) ? query.get('from') : addDays(to, -29);
+  const br = Number(query.get('branch_id')) || null;
+  const args = [`${from} 00:00`, `${to} 99:99`]; if (br) args.push(br);
+  const base = `FROM gate_logs WHERE result='allowed' AND method<>'manual' AND created_at>=? AND created_at<=? ${br ? 'AND branch_id=?' : ''}`;
+  const hours = (await env.DB.prepare(`SELECT CAST(substr(created_at,12,2) AS INTEGER) AS hour, COUNT(*) AS n ${base} GROUP BY hour ORDER BY hour`).bind(...args).all()).results;
+  const days = (await env.DB.prepare(`SELECT CAST(strftime('%w', substr(created_at,1,10)) AS INTEGER) AS dow, COUNT(*) AS n ${base} GROUP BY dow ORDER BY dow`).bind(...args).all()).results;
+  const peak = hours.reduce((m, h) => (h.n > (m?.n || 0) ? h : m), null);
+  const quiet = hours.filter((h) => h.hour >= 6 && h.hour <= 23).reduce((m, h) => (m == null || h.n < m.n ? h : m), null);
+  return { from, to, branch_id: br, total: hours.reduce((s, h) => s + h.n, 0), hours, days, peak_hour: peak ? peak.hour : null, quiet_hour: quiet ? quiet.hour : null };
+}, { admin: true });
+
+route('GET', '/api/challenges', async ({ env, query }) => ({ items: (await env.DB.prepare('SELECT * FROM challenges WHERE month=? ORDER BY id').bind(query.get('month') && isMonth(query.get('month')) ? query.get('month') : bk.monthOf()).all()).results }), { admin: true });
+const chFields = (body) => {
+  const target = Math.round(num(body.target, 'target'));
+  if (target < 1 || target > 100) fail(400, 'target must be between 1 and 100');
+  const month = isMonth(body.month) ? body.month : bk.monthOf();
+  return [str(body.title, 'title'), str(body.title_ar, 'title_ar'), body.metric === 'classes' ? 'classes' : 'visits', target, month, body.active === false ? 0 : 1];
+};
+route('POST', '/api/challenges', async ({ env, body }) => {
+  const r = await env.DB.prepare('INSERT INTO challenges (title,title_ar,metric,target,month,active) VALUES (?,?,?,?,?,?)').bind(...chFields(body)).run();
+  return { id: r.meta.last_row_id };
+}, { admin: true });
+route('PUT', '/api/challenges/:id', async ({ env, params, body }) => {
+  const r = await env.DB.prepare('UPDATE challenges SET title=?,title_ar=?,metric=?,target=?,month=?,active=? WHERE id=?').bind(...chFields(body), params.id).run();
+  if (!r.meta.changes) fail(404, 'Challenge not found');
+  return { ok: true };
+}, { admin: true });
+route('GET', '/api/customer/challenges', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  const chs = (await env.DB.prepare('SELECT * FROM challenges WHERE active=1 AND month=? ORDER BY id').bind(bk.monthOf()).all()).results;
+  const out = [];
+  for (const ch of chs) {
+    const count = a.member_id ? await bk.challengeCount(env, a.member_id, ch) : 0;
+    const from = `${ch.month}-01`; const to = `${ch.month}-31 99`;
+    const board = ch.metric === 'classes'
+      ? (await env.DB.prepare("SELECT a.name, COUNT(*) AS n FROM class_bookings c JOIN accounts a ON a.member_id=c.member_id AND a.status='active' WHERE c.status='attended' AND c.class_date>=? AND c.class_date<=? GROUP BY a.id ORDER BY n DESC LIMIT 5").bind(from, to).all()).results
+      : (await env.DB.prepare("SELECT a.name, COUNT(DISTINCT substr(g.created_at,1,10)) AS n FROM gate_logs g JOIN accounts a ON a.member_id=g.member_id AND a.status='active' WHERE g.result='allowed' AND g.created_at>=? AND g.created_at<=? GROUP BY a.id ORDER BY n DESC LIMIT 5").bind(from, to).all()).results;
+    out.push({ id: ch.id, title: ch.title, title_ar: ch.title_ar, metric: ch.metric, target: ch.target, count, done: count >= ch.target,
+      board: board.map((r) => ({ name: String(r.name).split(' ')[0], n: r.n })) });
+  }
+  return { month: bk.monthOf(), items: out, linked: !!a.member_id };
 }, { auth: false });
 
 // Booking: customer side (pass link token) and staff side.

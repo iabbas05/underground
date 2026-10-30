@@ -36,6 +36,11 @@ function msg(kind, d) {
     case 'reminder': return { title_ar: 'تذكير بالكلاس', title_en: 'Class reminder', body_ar: `${cls(true)} يبدأ بعد ساعة تقريباً.`, body_en: `The ${cls(false)} starts in about an hour.` };
     case 'removed': return { title_ar: 'تم إلغاء حجزك', title_en: 'Booking cancelled', body_ar: `ألغى الموظف حجزك في ${cls(true)}.`, body_en: `Staff cancelled your booking for the ${cls(false)}.` };
     case 'banned': return { title_ar: 'إيقاف الحجز مؤقتاً', title_en: 'Booking paused', body_ar: `بسبب تكرار الإلغاء أو الغياب، الحجز موقوف حتى ${d.until}.`, body_en: `Because of repeated cancellations or no-shows, booking is paused until ${d.until}.` };
+    case 'expiring': return { title_ar: 'اشتراكك ينتهي قريباً', title_en: 'Membership ending soon', body_ar: `ينتهي اشتراكك بعد ${d.days} أيام (${d.end_date}). جدّد من فرعك.`, body_en: `Your membership ends in ${d.days} days (${d.end_date}). Renew at your branch.` };
+    case 'expired': return { title_ar: 'انتهى اشتراكك', title_en: 'Membership expired', body_ar: `انتهى اشتراكك بتاريخ ${d.end_date}. جدّد من فرعك للاستمرار.`, body_en: `Your membership ended on ${d.end_date}. Renew at your branch to continue.` };
+    case 'freeze_ok': return { title_ar: 'تم تجميد اشتراكك', title_en: 'Membership frozen', body_ar: `تم تجميد اشتراكك ${d.days} يوم حتى ${d.until}، وتمدد تاريخ الانتهاء بنفس المدة.`, body_en: `Your membership is frozen for ${d.days} days until ${d.until}; the end date was extended by the same amount.` };
+    case 'freeze_no': return { title_ar: 'رُفض طلب التجميد', title_en: 'Freeze request declined', body_ar: 'لم تتم الموافقة على طلب تجميد اشتراكك. تواصل مع الفرع للتفاصيل.', body_en: 'Your freeze request was not approved. Ask your branch for details.' };
+    case 'challenge_done': return { title_ar: 'أنجزت التحدي!', title_en: 'Challenge completed!', body_ar: `مبروك! أنجزت تحدي: ${d.title_ar}`, body_en: `Congrats! You completed: ${d.title}` };
     default: return { title_ar: '', title_en: '', body_ar: '', body_en: '' };
   }
 }
@@ -201,9 +206,39 @@ export async function markAttended(env, bookingId) {
 }
 
 // Runs every few minutes: expire offers, remind, and settle finished classes (attended / no-show).
+export const monthOf = () => bhDate().slice(0, 7);
+export async function challengeCount(env, memberId, ch) {
+  const from = `${ch.month}-01`; const to = `${ch.month}-31 99`;
+  if (ch.metric === 'classes') {
+    return (await env.DB.prepare("SELECT COUNT(*) AS n FROM class_bookings WHERE member_id=? AND status='attended' AND class_date>=? AND class_date<=?").bind(memberId, from, to).first()).n;
+  }
+  return (await env.DB.prepare("SELECT COUNT(DISTINCT substr(created_at,1,10)) AS n FROM gate_logs WHERE member_id=? AND result='allowed' AND created_at>=? AND created_at<=?").bind(memberId, from, to).first()).n;
+}
+// Membership end reminders and challenge completions: each is sent once.
+export async function autoNotices(env) {
+  let sent = 0;
+  const t = bhDate();
+  const dup = async (memberId, kind, key, val) => !!(await env.DB.prepare('SELECT 1 FROM notifications WHERE member_id=? AND kind=? AND data LIKE ? LIMIT 1').bind(memberId, kind, `%"${key}":${JSON.stringify(val)}%`).first());
+  const ms = (await env.DB.prepare('SELECT id,end_date FROM members WHERE end_date BETWEEN ? AND ? AND blocked=0').bind(addDay(t, -1), addDay(t, 3)).all()).results;
+  for (const m of ms) {
+    const days = Math.round((Date.parse(`${m.end_date}T00:00:00Z`) - Date.parse(`${t}T00:00:00Z`)) / 86400000);
+    if (days >= 0 && days <= 3 && !(await dup(m.id, 'expiring', 'end_date', m.end_date))) { await notify(env, m.id, 'expiring', { days, end_date: m.end_date }); sent++; }
+    if (days < 0 && !(await dup(m.id, 'expired', 'end_date', m.end_date))) { await notify(env, m.id, 'expired', { end_date: m.end_date }); sent++; }
+  }
+  const chs = (await env.DB.prepare('SELECT * FROM challenges WHERE active=1 AND month=?').bind(monthOf()).all()).results;
+  if (chs.length) {
+    const linked = (await env.DB.prepare("SELECT DISTINCT member_id FROM accounts WHERE member_id IS NOT NULL AND status='active'").all()).results;
+    for (const ch of chs) for (const { member_id } of linked) {
+      if (await dup(member_id, 'challenge_done', 'challenge_id', ch.id)) continue;
+      if ((await challengeCount(env, member_id, ch)) >= ch.target) { await notify(env, member_id, 'challenge_done', { challenge_id: ch.id, title: ch.title, title_ar: ch.title_ar }); sent++; }
+    }
+  }
+  return sent;
+}
+
 export async function runCron(env) {
   const now = stamp();
-  const out = { expired: 0, reminded: 0, attended: 0, no_show: 0 };
+  const out = { expired: 0, reminded: 0, attended: 0, no_show: 0, notices: 0 };
   const stale = (await env.DB.prepare("SELECT id,member_id,schedule_id,class_date,class_time FROM class_bookings WHERE status='offered' AND offer_expires_at < ?").bind(now).all()).results;
   for (const b of stale) {
     await env.DB.prepare("UPDATE class_bookings SET status='expired', updated_at=? WHERE id=?").bind(now, b.id).run();
@@ -241,5 +276,6 @@ export async function runCron(env) {
       out.no_show++;
     }
   }
+  out.notices = await autoNotices(env);
   return out;
 }
