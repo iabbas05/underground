@@ -867,6 +867,120 @@ route('PUT', '/api/store/products/:id', async ({ env, params, body }) => {
   return { ok: true };
 }, { admin: true });
 
+/* ---------- recovery (sauna / massage) ---------- */
+const hm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+const toMin = (s) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
+const slotTimes = (sv) => { const out = []; for (let m = toMin(sv.open_time); m + sv.slot_minutes <= toMin(sv.close_time); m += sv.slot_minutes) out.push(hm(m)); return out; };
+async function recSlots(env, sv, date) {
+  const used = (await env.DB.prepare(`SELECT time, COUNT(*) AS n FROM recovery_bookings WHERE service_id=? AND date=? AND status IN ('booked','attended') GROUP BY time`).bind(sv.id, date).all()).results;
+  const map = new Map(used.map((r) => [r.time, r.n]));
+  const nowT = nowTime();
+  return slotTimes(sv).map((time) => {
+    const left = Math.max(0, sv.capacity - (map.get(time) || 0));
+    const past = `${date} ${time}` <= nowT;
+    return { time, free: left, full: left === 0, past };
+  });
+}
+route('GET', '/api/public/recovery', async ({ env }) => {
+  const bs = (await env.DB.prepare("SELECT id,name,name_ar,address,address_ar,hours,hours_ar,phone,map_url FROM branches WHERE kind='recovery' ORDER BY id").all()).results;
+  for (const b of bs) b.services = (await env.DB.prepare('SELECT id,kind,capacity,open_time,close_time,slot_minutes,price FROM recovery_services WHERE branch_id=? AND active=1 ORDER BY id').bind(b.id).all()).results;
+  return { items: bs };
+}, { auth: false });
+route('GET', '/api/public/recovery/slots', async ({ env, query }) => {
+  const sv = await env.DB.prepare('SELECT * FROM recovery_services WHERE id=? AND active=1').bind(Number(query.get('service_id'))).first();
+  if (!sv) fail(404, 'Service not found');
+  const date = query.get('date');
+  if (!isDate(date)) fail(400, 'date is required');
+  return { date, service: sv, slots: await recSlots(env, sv, date) };
+}, { auth: false });
+route('POST', '/api/customer/recovery/book', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const sv = await env.DB.prepare('SELECT * FROM recovery_services WHERE id=? AND active=1').bind(Number(body.service_id)).first();
+  if (!sv) fail(404, 'Service not found');
+  const date = String(body.date || ''); const time = String(body.time || '');
+  if (!isDate(date) || date < today() || date > addDays(today(), 7)) fail(400, 'Choose a day within the next 7 days');
+  if (!slotTimes(sv).includes(time)) fail(400, 'Bad time slot');
+  if (`${date} ${time}` <= nowTime()) fail(400, 'This time has passed');
+  const mine = await env.DB.prepare(`SELECT COUNT(*) AS n FROM recovery_bookings WHERE account_id=? AND date=? AND status='booked'`).bind(a.id, date).first();
+  if (mine.n >= 2) fail(429, 'Maximum 2 recovery bookings per day');
+  if (await env.DB.prepare(`SELECT 1 FROM recovery_bookings WHERE account_id=? AND service_id=? AND date=? AND time=? AND status='booked'`).bind(a.id, sv.id, date, time).first()) fail(409, 'You already booked this slot');
+  const slot = (await recSlots(env, sv, date)).find((s) => s.time === time);
+  if (slot.full) fail(409, 'This slot is full');
+  const r = await env.DB.prepare('INSERT INTO recovery_bookings (account_id,service_id,date,time,status,created_at) VALUES (?,?,?,?,?,?)').bind(a.id, sv.id, date, time, 'booked', nowTime()).run();
+  return { id: r.meta.last_row_id, date, time, minutes: sv.slot_minutes };
+}, { auth: false });
+const recView = `SELECT r.id,r.date,r.time,r.status,s.kind,s.slot_minutes,s.branch_id,b.name AS branch,b.name_ar AS branch_ar FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id JOIN branches b ON b.id=s.branch_id`;
+route('GET', '/api/customer/recovery', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  return { items: (await env.DB.prepare(`${recView} WHERE r.account_id=? AND r.date>=? ORDER BY r.date,r.time LIMIT 30`).bind(a.id, addDays(today(), -1)).all()).results };
+}, { auth: false });
+route('POST', '/api/customer/recovery/:id/cancel', async ({ request, env, params }) => {
+  const a = await custAuth(request, env);
+  const r = await env.DB.prepare(`SELECT id,date,time FROM recovery_bookings WHERE id=? AND account_id=? AND status='booked'`).bind(params.id, a.id).first();
+  if (!r) fail(404, 'Booking not found');
+  const limit = new Date(Date.parse(`${r.date}T${r.time}:00Z`) - 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  if (nowTime() > limit) fail(400, 'Cancel at least 1 hour before');
+  await env.DB.prepare(`UPDATE recovery_bookings SET status='cancelled' WHERE id=?`).bind(r.id).run();
+  return { ok: true };
+}, { auth: false });
+route('GET', '/api/recovery/bookings', async ({ env, user, query }) => {
+  const br = user.role === 'admin' ? Number(query.get('branch_id')) || null : user.branch_id;
+  const d = isDate(query.get('date')) ? query.get('date') : today();
+  const rows = (await env.DB.prepare(`SELECT r.id,r.date,r.time,r.status,s.kind,a.name AS customer,a.phone FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id JOIN accounts a ON a.id=r.account_id WHERE r.date=? ${br ? 'AND s.branch_id=?' : ''} ORDER BY r.time,s.kind`).bind(...(br ? [d, br] : [d])).all()).results;
+  return { date: d, items: rows };
+});
+route('POST', '/api/recovery/bookings/:id/status', async ({ env, user, params, body }) => {
+  const st = String(body.status || '');
+  if (!['attended', 'no_show', 'cancelled'].includes(st)) fail(400, 'Bad status');
+  const r = await env.DB.prepare('SELECT r.id,s.branch_id FROM recovery_bookings r JOIN recovery_services s ON s.id=r.service_id WHERE r.id=?').bind(params.id).first();
+  if (!r) fail(404, 'Booking not found');
+  staffBranch(user, r.branch_id);
+  await env.DB.prepare('UPDATE recovery_bookings SET status=? WHERE id=?').bind(st, r.id).run();
+  return { ok: true };
+});
+route('GET', '/api/recovery/services', async ({ env }) => ({ items: (await env.DB.prepare('SELECT s.*,b.name AS branch,b.name_ar AS branch_ar FROM recovery_services s JOIN branches b ON b.id=s.branch_id ORDER BY s.id').all()).results }), { admin: true });
+route('PUT', '/api/recovery/services/:id', async ({ env, params, body }) => {
+  const cap = Math.round(num(body.capacity, 'capacity'));
+  if (cap < 1 || cap > 50) fail(400, 'capacity must be between 1 and 50');
+  const ot = String(body.open_time || ''), ct = String(body.close_time || '');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(ot) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(ct) || ot >= ct) fail(400, 'Bad opening hours');
+  const slot = Math.round(num(body.slot_minutes == null ? 60 : body.slot_minutes, 'slot_minutes'));
+  if (![30, 45, 60, 90, 120].includes(slot)) fail(400, 'slot_minutes must be 30, 45, 60, 90 or 120');
+  const price = body.price == null || body.price === '' ? null : num(body.price, 'price');
+  const r = await env.DB.prepare('UPDATE recovery_services SET capacity=?,open_time=?,close_time=?,slot_minutes=?,price=?,active=? WHERE id=?').bind(cap, ot, ct, slot, price, body.active === false ? 0 : 1, params.id).run();
+  if (!r.meta.changes) fail(404, 'Service not found');
+  return { ok: true };
+}, { admin: true });
+
+/* ---------- BMI / progress ---------- */
+const bmiOf = (kg, cm) => (kg && cm ? Math.round((kg / ((cm / 100) ** 2)) * 10) / 10 : null);
+const bmiClass = (b) => (b == null ? null : b < 18.5 ? 'under' : b < 25 ? 'normal' : b < 30 ? 'over' : 'obese');
+route('POST', '/api/customer/body', async ({ request, env, body }) => {
+  const a = await custAuth(request, env);
+  const kg = num(body.weight_kg, 'weight_kg');
+  if (kg < 20 || kg > 400) fail(400, 'Weight looks wrong');
+  const opt = (k, lo, hi) => { if (body[k] == null || body[k] === '') return null; const v = num(body[k], k); if (v < lo || v > hi) fail(400, `${k} looks wrong`); return v; };
+  let cm = opt('height_cm', 80, 250);
+  if (cm == null) cm = (await env.DB.prepare('SELECT height_cm FROM body_entries WHERE account_id=? AND height_cm IS NOT NULL ORDER BY date DESC,id DESC LIMIT 1').bind(a.id).first())?.height_cm ?? null;
+  const date = isDate(body.date) ? body.date : today();
+  if (date > today()) fail(400, 'Date is in the future');
+  const r = await env.DB.prepare('INSERT INTO body_entries (account_id,date,weight_kg,height_cm,body_fat,waist_cm,created_at) VALUES (?,?,?,?,?,?,?)').bind(a.id, date, kg, cm, opt('body_fat', 3, 70), opt('waist_cm', 30, 250), nowTime()).run();
+  return { id: r.meta.last_row_id, bmi: bmiOf(kg, cm), category: bmiClass(bmiOf(kg, cm)) };
+}, { auth: false });
+route('GET', '/api/customer/body', async ({ request, env }) => {
+  const a = await custAuth(request, env);
+  const rows = (await env.DB.prepare('SELECT id,date,weight_kg,height_cm,body_fat,waist_cm FROM body_entries WHERE account_id=? ORDER BY date,id').bind(a.id).all()).results;
+  const items = rows.map((e) => ({ ...e, bmi: bmiOf(e.weight_kg, e.height_cm) }));
+  const first = items[0]; const last = items[items.length - 1];
+  return { items, latest: last ? { ...last, category: bmiClass(last.bmi) } : null,
+    change_kg: first && last && first !== last ? Math.round((last.weight_kg - first.weight_kg) * 10) / 10 : 0 };
+}, { auth: false });
+route('POST', '/api/customer/body/:id/delete', async ({ request, env, params }) => {
+  const a = await custAuth(request, env);
+  await env.DB.prepare('DELETE FROM body_entries WHERE id=? AND account_id=?').bind(params.id, a.id).run();
+  return { ok: true };
+}, { auth: false });
+
 // Booking: customer side (pass link token) and staff side.
 const bkRun = async (fn) => {
   try { return await fn(); } catch (e) { if (e instanceof bk.BookingError) fail(e.status, e.message); throw e; }

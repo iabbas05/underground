@@ -55,6 +55,7 @@ const _s = <String, Map<String, String>>{
     'strikes': 'إلغاءات متتالية', 'g_hint': 'للحجز وعرض بطاقتك سجّل الدخول', 'g_link': 'تسجيل الدخول', 'g_need': 'سجّل الدخول أولاً للحجز', 'g_classes': 'الحصص', 'g_info': 'الفروع', 'g_pass': 'بطاقتي', 'g_pass_body': 'اربط حسابك لعرض بطاقة الدخول والاشتراك.', 'g_branch': 'اختر الفرع', 'g_seats': 'مقعد متاح', 'back': 'رجوع', 'bell': 'الإشعارات', 'nonotif': 'لا توجد إشعارات', 'wait_n': 'بالانتظار', 'err': 'حدث خطأ',
     'acct': 'حسابي', 'login': 'تسجيل الدخول', 'signup': 'إنشاء حساب', 'username': 'اسم المستخدم', 'password': 'كلمة المرور (8 أحرف على الأقل)', 'fullname': 'الاسم', 'phone': 'رقم الهاتف', 'have_acc': 'عندي حساب', 'no_acc': 'ما عندي حساب', 'pending_msg': 'حسابك قيد المراجعة. إذا كنت مشتركاً، أدخل كود الربط من الموظف أو انتظر تفعيل الإدارة.', 'link_code': 'كود الربط من الموظف', 'send_code': 'إرسال الرمز', 'verify': 'تأكيد', 'email': 'البريد الإلكتروني', 'otp': 'رمز التحقق', 'email_ok': 'تم توثيق البريد', 'logout': 'تسجيل الخروج', 'sub_none': 'لا يوجد اشتراك مرتبط بهذا الحساب', 'sub_expired': 'اشتراكك منتهي', 'addr': 'العنوان', 'hours': 'ساعات العمل', 'call': 'اتصال', 'map': 'الخريطة', 'view_classes': 'عرض الحصص', 'done': 'تم',
     'store': 'الماركت', 'cart': 'السلة', 'order_now': 'اطلب (الدفع عند الاستلام)', 'sold_out': 'نفدت الكمية', 'left_n': 'متبقي', 'goal_all': 'الكل', 'goal_muscle': 'بناء عضل', 'goal_cut': 'تنشيف', 'goal_light': 'خفيف', 'suggested': 'مقترح لك', 'cal': 'سعرة', 'prot': 'بروتين', 'my_orders': 'طلباتي', 'order_sent': 'تم إرسال الطلب، بانتظار موافقة الموظف. الدفع عند الاستلام.', 'st_pending': 'بانتظار الموافقة', 'st_approved': 'تمت الموافقة', 'st_ready': 'جاهز للاستلام', 'st_picked': 'تم الاستلام', 'st_rejected': 'مرفوض', 'st_cancelled': 'ملغي', 'need_login': 'سجّل الدخول أولاً للطلب', 'bd': 'د.ب', 'note': 'ملاحظة (اختياري)', 'empty_menu': 'لا توجد منتجات متاحة اليوم',
+    'well': 'الاستشفاء والتقدّم', 'recovery': 'الاستشفاء', 'progress': 'تقدّمي', 'sauna': 'ساونا', 'massage': 'مساج', 'slot_min': 'دقيقة', 'seats_n': 'متاح', 'book_slot': 'حجز', 'booked_ok': 'تم الحجز', 'my_rec': 'حجوزاتي', 'st_booked': 'محجوز', 'st_attended': 'حضرت', 'st_no_show': 'لم تحضر', 'cancel_rec_q': 'إلغاء الحجز؟', 'weight': 'الوزن (كجم)', 'height': 'الطول (سم)', 'body_fat': 'نسبة الدهون % (اختياري)', 'save_entry': 'حفظ القياس', 'bmi': 'مؤشر كتلة الجسم', 'bmi_under': 'نحيف', 'bmi_normal': 'طبيعي', 'bmi_over': 'وزن زائد', 'bmi_obese': 'سمنة', 'change': 'التغيّر', 'history': 'السجل', 'need_login2': 'سجّل الدخول لحفظ قياساتك وحجوزاتك', 'no_slots': 'لا توجد أوقات', 'price': 'السعر',
   },
   'en': {
     'pass': 'Pass', 'me': 'Membership', 'cls': 'Classes',
@@ -79,7 +80,8 @@ const _s = <String, Map<String, String>>{
     'cancel_booking': 'Cancel booking', 'booked': 'Booked', 'onwait': 'On the waitlist', 'accept': 'Confirm', 'decline': 'Decline',
     'closed': 'Closed', 'attended': 'Attended', 'toolate': 'Cancel at least 1 hour before', 'paused': 'Booking paused until',
     'strikes': 'cancellations in a row', 'bell': 'Notifications', 'nonotif': 'No notifications', 'wait_n': 'waiting', 'err': 'Something went wrong',
-    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today',
+    'acct': 'My account', 'login': 'Log in', 'signup': 'Create account', 'username': 'Username', 'password': 'Password (at least 8 characters)', 'fullname': 'Full name', 'phone': 'Phone number', 'have_acc': 'I have an account', 'no_acc': 'I do not have an account', 'pending_msg': 'Your account is under review. If you are a member, enter the link code from the staff or wait for the admin to activate it.', 'link_code': 'Link code from staff', 'send_code': 'Send code', 'verify': 'Verify', 'email': 'Email', 'otp': 'Verification code', 'email_ok': 'Email verified', 'logout': 'Log out', 'sub_none': 'No membership is linked to this account', 'sub_expired': 'Your membership has expired', 'addr': 'Address', 'hours': 'Opening hours', 'call': 'Call', 'map': 'Map', 'view_classes': 'View classes', 'done': 'Done', 'store': 'Store', 'cart': 'Cart', 'order_now': 'Order (pay on pickup)', 'sold_out': 'Sold out', 'left_n': 'left', 'goal_all': 'All', 'goal_muscle': 'Build muscle', 'goal_cut': 'Cutting', 'goal_light': 'Light', 'suggested': 'Suggested', 'cal': 'kcal', 'prot': 'protein', 'my_orders': 'My orders', 'order_sent': 'Order sent, waiting for staff approval. Pay on pickup.', 'st_pending': 'Waiting approval', 'st_approved': 'Approved', 'st_ready': 'Ready for pickup', 'st_picked': 'Picked up', 'st_rejected': 'Rejected', 'st_cancelled': 'Cancelled', 'need_login': 'Log in first to order', 'bd': 'BD', 'note': 'Note (optional)', 'empty_menu': 'No products available today', 'well': 'Recovery & progress', 'recovery': 'Recovery', 'progress': 'My progress', 'sauna': 'Sauna', 'massage': 'Massage', 'slot_min': 'min', 'seats_n': 'left', 'book_slot': 'Book', 'booked_ok': 'Booked', 'my_rec': 'My bookings', 'st_booked': 'Booked', 'st_attended': 'Attended', 'st_no_show': 'No show', 'cancel_rec_q': 'Cancel this booking?', 'weight': 'Weight (kg)', 'height': 'Height (cm)', 'body_fat': 'Body fat % (optional)', 'save_entry': 'Save measurement', 'bmi': 'BMI', 'bmi_under': 'Underweight', 'bmi_normal': 'Normal', 'bmi_over': 'Overweight', 'bmi_obese': 'Obese', 'change': 'Change', 'history': 'History', 'need_login2': 'Log in to save your measurements and bookings', 'no_slots': 'No time slots', 'price': 'Price',
+
  'g_hint': 'Log in to book and see your pass', 'g_link': 'Log in', 'g_need': 'Log in first to book', 'g_classes': 'Classes', 'g_info': 'Branches', 'g_pass': 'My pass', 'g_pass_body': 'Log in to see your entry pass and membership.', 'g_branch': 'Choose a branch', 'g_seats': 'seats left', 'back': 'Back',
   },
 };
@@ -426,7 +428,7 @@ class _GuestHomeState extends State<GuestHome> {
         title: const Text('UNDERGROUND', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 18)),
         actions: [IconButton(tooltip: t('acct'), icon: const Icon(Icons.account_circle_outlined), onPressed: toLink), TextButton(onPressed: () => setLang(lang.value == 'ar' ? 'en' : 'ar'), child: Text(t('lang')))],
       ),
-      body: tab == 0 ? classesView() : tab == 1 ? const StoreScreen() : tab == 2 ? infoView() : passView(),
+      body: tab == 0 ? classesView() : tab == 1 ? const StoreScreen() : tab == 2 ? const WellnessScreen() : tab == 3 ? infoView() : passView(),
       bottomNavigationBar: NavigationBar(
         backgroundColor: _panel,
         selectedIndex: tab,
@@ -434,6 +436,7 @@ class _GuestHomeState extends State<GuestHome> {
         destinations: [
           NavigationDestination(icon: const Icon(Icons.fitness_center), label: t('g_classes')),
           NavigationDestination(icon: const Icon(Icons.restaurant_menu), label: t('store')),
+          NavigationDestination(icon: const Icon(Icons.spa_outlined), label: t('well')),
           NavigationDestination(icon: const Icon(Icons.place_outlined), label: t('g_info')),
           NavigationDestination(icon: const Icon(Icons.qr_code_2), label: t('g_pass')),
         ],
@@ -644,6 +647,330 @@ class _StoreScreenState extends State<StoreScreen> {
             child: Text('${t('order_now')}  ·  ${total.toStringAsFixed(3)} ${t('bd')}'),
           ),
         ),
+    ]);
+  }
+}
+
+class WellnessScreen extends StatefulWidget {
+  const WellnessScreen({super.key});
+  @override
+  State<WellnessScreen> createState() => _WellnessScreenState();
+}
+
+class _WellnessScreenState extends State<WellnessScreen> {
+  bool progress = false;
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
+        child: SegmentedButton<bool>(
+          showSelectedIcon: false,
+          segments: [ButtonSegment(value: false, label: Text(t('recovery'))), ButtonSegment(value: true, label: Text(t('progress')))],
+          selected: {progress},
+          onSelectionChanged: (s) => setState(() => progress = s.first),
+        ),
+      ),
+      Expanded(child: progress ? const ProgressView() : const RecoveryView()),
+    ]);
+  }
+}
+
+String _two(int n) => n.toString().padLeft(2, '0');
+String _ymd(DateTime d) => '${d.year}-${_two(d.month)}-${_two(d.day)}';
+
+class RecoveryView extends StatefulWidget {
+  const RecoveryView({super.key});
+  @override
+  State<RecoveryView> createState() => _RecoveryViewState();
+}
+
+class _RecoveryViewState extends State<RecoveryView> {
+  List<dynamic> branches = [];
+  int bi = 0;
+  int si = 0;
+  int dayOff = 0;
+  List<dynamic> slots = [];
+  List<dynamic> mine = [];
+  bool loading = true;
+  String? err;
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  String get date => _ymd(DateTime.now().toUtc().add(Duration(hours: 3, days: dayOff)));
+
+  Future<void> init() async {
+    try {
+      final r = await getJson('/api/public/recovery');
+      branches = r['items'] as List<dynamic>;
+      await loadSlots();
+      await loadMine();
+    } catch (_) {
+      if (mounted) setState(() { err = t('net'); loading = false; });
+    }
+  }
+
+  List<dynamic> get services => branches.isEmpty ? [] : ((branches[bi] as Map)['services'] as List<dynamic>);
+
+  Future<void> loadSlots() async {
+    if (services.isEmpty) {
+      if (mounted) setState(() { slots = []; loading = false; });
+      return;
+    }
+    if (si >= services.length) si = 0;
+    setState(() => loading = true);
+    try {
+      final r = await getJson('/api/public/recovery/slots?service_id=${(services[si] as Map)['id']}&date=$date');
+      if (mounted) setState(() { slots = r['slots'] as List<dynamic>; loading = false; err = null; });
+    } catch (_) {
+      if (mounted) setState(() { err = t('net'); loading = false; });
+    }
+  }
+
+  Future<void> loadMine() async {
+    if (custToken == null) return;
+    try {
+      final r = await authCall('GET', '/api/customer/recovery');
+      if (mounted) setState(() => mine = r['items'] as List<dynamic>);
+    } catch (_) {}
+  }
+
+  Future<void> book(String time) async {
+    if (custToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('need_login2'))));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+      return;
+    }
+    try {
+      await authCall('POST', '/api/customer/recovery/book', {'service_id': (services[si] as Map)['id'], 'date': date, 'time': time});
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('booked_ok'))));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+    await loadSlots();
+    await loadMine();
+  }
+
+  String bn(Map b) => lang.value == 'ar' ? ((b['name_ar'] ?? b['name']) as String) : (b['name'] as String);
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = lang.value == 'ar';
+    final dayNames = t('days').split(',');
+    final now = DateTime.now().toUtc().add(const Duration(hours: 3));
+    return ListView(padding: const EdgeInsets.all(18), children: [
+      if (err != null) Center(child: Column(children: [Text(err!, style: const TextStyle(color: _bad)), OutlinedButton(onPressed: init, child: Text(t('ok')))])),
+      Wrap(spacing: 8, children: [
+        for (var i = 0; i < branches.length; i++)
+          ChoiceChip(label: Text(bn(Map<String, dynamic>.from(branches[i] as Map))), selected: bi == i, onSelected: (_) { bi = i; si = 0; loadSlots(); }),
+      ]),
+      const SizedBox(height: 6),
+      Wrap(spacing: 8, children: [
+        for (var i = 0; i < services.length; i++)
+          ChoiceChip(
+            label: Text('${t((services[i] as Map)['kind'] as String)}  ·  ${(services[i] as Map)['slot_minutes']} ${t('slot_min')}${(services[i] as Map)['price'] != null ? '  ·  ${((services[i] as Map)['price'] as num).toStringAsFixed(1)} ${t('bd')}' : ''}'),
+            selected: si == i,
+            onSelected: (_) { si = i; loadSlots(); },
+          ),
+      ]),
+      const SizedBox(height: 6),
+      SizedBox(
+        height: 46,
+        child: ListView(scrollDirection: Axis.horizontal, children: [
+          for (var d = 0; d < 7; d++)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ChoiceChip(
+                label: Text(d == 0 ? t('today') : d == 1 ? t('tomorrow') : '${dayNames[now.add(Duration(days: d)).weekday % 7]} ${now.add(Duration(days: d)).day}'),
+                selected: dayOff == d,
+                onSelected: (_) { dayOff = d; loadSlots(); },
+              ),
+            ),
+        ]),
+      ),
+      const SizedBox(height: 10),
+      if (loading)
+        const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
+      else if (slots.isEmpty)
+        Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(t('no_slots'), style: const TextStyle(color: _mute))))
+      else
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final raw in slots)
+            Builder(builder: (context) {
+              final sl = Map<String, dynamic>.from(raw as Map);
+              final off = sl['full'] == true || sl['past'] == true;
+              return SizedBox(
+                width: 104,
+                child: OutlinedButton(
+                  onPressed: off ? null : () => book(sl['time'] as String),
+                  child: Column(children: [
+                    Text(sl['time'] as String, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(sl['full'] == true ? t('full') : '${sl['free']} ${t('seats_n')}', style: TextStyle(fontSize: 11, color: off ? _mute : _ok)),
+                  ]),
+                ),
+              );
+            }),
+        ]),
+      if (mine.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        Text(t('my_rec'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        for (final raw in mine)
+          Builder(builder: (context) {
+            final m = Map<String, dynamic>.from(raw as Map);
+            return Card(
+              color: _panel,
+              child: ListTile(
+                title: Text('${t(m['kind'] as String)}  ·  ${m['date']}  ${m['time']}'),
+                subtitle: Text('${ar ? (m['branch_ar'] ?? m['branch']) : m['branch']}  ·  ${t('st_${m['status']}')}'),
+                trailing: m['status'] == 'booked'
+                    ? TextButton(
+                        onPressed: () async {
+                          try {
+                            await authCall('POST', '/api/customer/recovery/${m['id']}/cancel');
+                          } catch (e) {
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                          }
+                          await loadSlots();
+                          await loadMine();
+                        },
+                        child: Text(t('cancel')))
+                    : null,
+              ),
+            );
+          }),
+      ],
+    ]);
+  }
+}
+
+class ProgressView extends StatefulWidget {
+  const ProgressView({super.key});
+  @override
+  State<ProgressView> createState() => _ProgressViewState();
+}
+
+class _ProgressViewState extends State<ProgressView> {
+  Map<String, dynamic>? data;
+  bool busy = false;
+  final kg = TextEditingController();
+  final cm = TextEditingController();
+  final fat = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    if (custToken == null) return;
+    try {
+      final r = await authCall('GET', '/api/customer/body');
+      if (mounted) setState(() => data = r);
+    } catch (_) {}
+  }
+
+  Future<void> save() async {
+    setState(() => busy = true);
+    try {
+      await authCall('POST', '/api/customer/body', {
+        'weight_kg': double.tryParse(kg.text.trim()) ?? 0,
+        if (cm.text.trim().isNotEmpty) 'height_cm': double.tryParse(cm.text.trim()),
+        if (fat.text.trim().isNotEmpty) 'body_fat': double.tryParse(fat.text.trim()),
+      });
+      kg.clear();
+      fat.clear();
+      await load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Color catColor(String? c) => c == 'normal' ? _ok : c == 'under' ? _warn : _bad;
+
+  @override
+  Widget build(BuildContext context) {
+    if (custToken == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(t('need_login2'), textAlign: TextAlign.center, style: const TextStyle(color: _mute)),
+            const SizedBox(height: 16),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _violet),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen())).then((_) => load()),
+              child: Text(t('login')),
+            ),
+          ]),
+        ),
+      );
+    }
+    final latest = data?['latest'] is Map ? Map<String, dynamic>.from(data!['latest'] as Map) : null;
+    final items = (data?['items'] as List<dynamic>? ?? []).reversed.toList();
+    return ListView(padding: const EdgeInsets.all(18), children: [
+      if (latest != null)
+        Card(
+          color: _panel,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${latest['weight_kg']} kg', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+                  Text('${t('change')}: ${data!['change_kg']} kg', style: const TextStyle(color: _mute)),
+                ]),
+              ),
+              if (latest['bmi'] != null)
+                Column(children: [
+                  Text(t('bmi'), style: const TextStyle(color: _mute, fontSize: 12)),
+                  Text('${latest['bmi']}', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: catColor(latest['category'] as String?))),
+                  Text(t('bmi_${latest['category']}'), style: TextStyle(color: catColor(latest['category'] as String?), fontSize: 12)),
+                ]),
+            ]),
+          ),
+        ),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: TextField(controller: kg, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: t('weight'), border: const OutlineInputBorder()))),
+        const SizedBox(width: 8),
+        Expanded(child: TextField(controller: cm, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t('height'), border: const OutlineInputBorder()))),
+      ]),
+      const SizedBox(height: 8),
+      TextField(controller: fat, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: t('body_fat'), border: const OutlineInputBorder())),
+      const SizedBox(height: 10),
+      FilledButton(
+        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: _violet),
+        onPressed: busy ? null : save,
+        child: Text(t('save_entry')),
+      ),
+      if (items.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        Text(t('history'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        for (final raw in items)
+          Builder(builder: (context) {
+            final e = Map<String, dynamic>.from(raw as Map);
+            return ListTile(
+              dense: true,
+              title: Text('${e['date']}  ·  ${e['weight_kg']} kg${e['bmi'] != null ? '  ·  ${t('bmi')} ${e['bmi']}' : ''}${e['body_fat'] != null ? '  ·  ${e['body_fat']}%' : ''}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                onPressed: () async {
+                  try {
+                    await authCall('POST', '/api/customer/body/${e['id']}/delete');
+                  } catch (_) {}
+                  await load();
+                },
+              ),
+            );
+          }),
+      ],
     ]);
   }
 }
@@ -1265,7 +1592,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       );
     } else {
-      body = tab == 0 ? passTab() : tab == 1 ? meTab() : tab == 2 ? classesTab() : const StoreScreen();
+      body = tab == 0 ? passTab() : tab == 1 ? meTab() : tab == 2 ? classesTab() : tab == 3 ? const StoreScreen() : const WellnessScreen();
     }
     return Scaffold(
       appBar: AppBar(
@@ -1307,6 +1634,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           NavigationDestination(icon: const Icon(Icons.badge_outlined), label: t('me')),
           NavigationDestination(icon: const Icon(Icons.fitness_center), label: t('cls')),
           NavigationDestination(icon: const Icon(Icons.restaurant_menu), label: t('store')),
+          NavigationDestination(icon: const Icon(Icons.spa_outlined), label: t('well')),
         ],
       ),
     );

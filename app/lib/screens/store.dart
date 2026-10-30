@@ -14,7 +14,7 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen> {
   int version = 0;
-  bool stockMode = false;
+  int mode = 0; // 0 orders, 1 stock, 2 recovery bookings
 
   Future<void> setStatus(int id, String status) async {
     try {
@@ -124,19 +124,65 @@ class _StoreScreenState extends State<StoreScreen> {
         },
       );
 
+  Future<void> recStatus(int id, String status) async {
+    try {
+      await Api.post('/api/recovery/bookings/$id/status', {'status': status});
+      if (mounted) setState(() => version++);
+    } catch (e) {
+      if (mounted) toast(context, errText(e), error: true);
+    }
+  }
+
+  Widget recovery() => Loader<Map<String, dynamic>>(
+        key: ValueKey('r$version'),
+        load: () async => asMap(await Api.get('/api/recovery/bookings')),
+        builder: (context, d, reload) {
+          final items = asMaps(d['items']);
+          if (items.isEmpty) return Center(child: Text(tr('no_rec'), style: const TextStyle(color: Palette.mute)));
+          return RefreshIndicator(
+            onRefresh: reload,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                final b = items[i];
+                final id = (b['id'] as num).toInt();
+                return UgCard(
+                  child: Row(children: [
+                    Text('${b['time']}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${tr('rec_${b['kind']}')}  ·  ${b['customer']}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                        Text('${b['phone']}  ·  ${tr('rs_${b['status']}')}', style: const TextStyle(color: Palette.mute, fontSize: 12)),
+                      ]),
+                    ),
+                    if (b['status'] == 'booked') ...[
+                      IconButton(onPressed: () => recStatus(id, 'attended'), icon: const Icon(Icons.check_circle_outline, color: Palette.ok)),
+                      IconButton(onPressed: () => recStatus(id, 'no_show'), icon: const Icon(Icons.cancel_outlined, color: Palette.bad)),
+                    ],
+                  ]),
+                );
+              },
+            ),
+          );
+        },
+      );
+
   @override
   Widget build(BuildContext context) {
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(16),
-        child: SegmentedButton<bool>(
+        child: SegmentedButton<int>(
           showSelectedIcon: false,
-          segments: [ButtonSegment(value: false, label: Text(tr('store_orders'))), ButtonSegment(value: true, label: Text(tr('store_stock')))],
-          selected: {stockMode},
-          onSelectionChanged: (s) => setState(() { stockMode = s.first; version++; }),
+          segments: [ButtonSegment(value: 0, label: Text(tr('store_orders'))), ButtonSegment(value: 1, label: Text(tr('store_stock'))), ButtonSegment(value: 2, label: Text(tr('recovery_today')))],
+          selected: {mode},
+          onSelectionChanged: (s) => setState(() { mode = s.first; version++; }),
         ),
       ),
-      Expanded(child: stockMode ? stock() : orders()),
+      Expanded(child: mode == 1 ? stock() : mode == 2 ? recovery() : orders()),
     ]);
   }
 }
