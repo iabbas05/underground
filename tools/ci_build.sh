@@ -25,6 +25,19 @@ for f in glob.glob('android/app/build.gradle*'):
         block = 'signingConfigs {\n        debug {\n            storeFile file("' + ks + '")\n            storePassword "ugunderground"\n            keyAlias "ug"\n            keyPassword "ugunderground"\n        }\n    }\n    '
     s = re.sub(r'(\nandroid\s*\{\n)', lambda m: m.group(1) + '    ' + block, s, count=1)
     assert 'storeFile' in s, 'could not add the signing key to ' + f
+    # ota_update (in-app install) needs core library desugaring
+    kts = f.endswith('.kts')
+    flag = 'isCoreLibraryDesugaringEnabled = true' if kts else 'coreLibraryDesugaringEnabled true'
+    dep = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")' if kts else "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'"
+    if re.search(r'compileOptions\s*\{', s):
+        s = re.sub(r'(compileOptions\s*\{)', lambda m: m.group(1) + '\n        ' + flag, s, count=1)
+    else:
+        s = re.sub(r'(\nandroid\s*\{\n)', lambda m: m.group(1) + '    compileOptions {\n        ' + flag + '\n    }\n', s, count=1)
+    if re.search(r'\ndependencies\s*\{', s):
+        s = re.sub(r'(\ndependencies\s*\{)', lambda m: m.group(1) + '\n    ' + dep, s, count=1)
+    else:
+        s += '\ndependencies {\n    ' + dep + '\n}\n'
+    assert 'esugar' in s, 'could not enable desugaring in ' + f
     open(f, 'w').write(s)
 m = 'android/app/src/main/AndroidManifest.xml'
 s = open(m).read()
