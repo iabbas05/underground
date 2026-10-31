@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +10,7 @@ import 'i18n.dart';
 
 /// Asks the server whether a newer app was released. Returns the release info or null.
 Future<Map<String, dynamic>?> fetchRelease() async {
+  if (Platform.isIOS) return null; // APK updates are Android only
   try {
     final r = asMap(await Api.get('/api/app/version'));
     final build = (r['build'] as num?)?.toInt() ?? 0;

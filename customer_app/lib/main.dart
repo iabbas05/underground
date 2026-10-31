@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:ota_update/ota_update.dart';
 import 'dart:convert';
 
@@ -584,6 +585,10 @@ Future<void> installAppUpdate(BuildContext context, String url) async {
 
 /// Used by the account/settings screen (works for guests too).
 Future<void> checkAppUpdate(BuildContext context) async {
+  if (Platform.isIOS) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t('upd_none')}  (v$appBuild)')));
+    return;
+  }
   try {
     final r = await getJson('/api/app/version?app=member');
     final build = (r['build'] as num?)?.toInt() ?? 0;
@@ -1794,6 +1799,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> checkUpdate(bool manual) async {
+    if (Platform.isIOS) return; // APK updates are Android only
     try {
       final r = await getJson('/api/app/version?app=member');
       final build = (r['build'] as num?)?.toInt() ?? 0;
