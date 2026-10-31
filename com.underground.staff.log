@@ -1,0 +1,69 @@
+10-31 13:21:35.564  2771  2771 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-31 13:21:35.592  2771  2771 I AndroidRuntime: Using default boot image
+10-31 13:21:35.592  2771  2771 I AndroidRuntime: Leaving lock profiling enabled
+10-31 13:21:35.844  2771  2771 D AndroidRuntime: Calling main entry com.android.commands.monkey.Monkey
+10-31 13:21:35.851  2771  2771 W Monkey  : args: [-p, com.underground.staff, -c, android.intent.category.LAUNCHER, 1]
+10-31 13:21:35.851  2771  2771 W Monkey  :  arg: "com.underground.staff"
+10-31 13:21:35.851  2771  2771 W Monkey  : data="com.underground.staff"
+10-31 13:21:36.066   837   870 V WindowManagerShell: Transition requested: android.os.BinderProxy@9a4f0ce TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.underground.staff/com.underground.ug_app.MainActivity } baseActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} topActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} origActivity=null realActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} numActivities=1 lastActiveTime=42231 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@9ed7bef} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{fbac6fc com.underground.ug_app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+10-31 13:21:36.067   524  2062 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.underground.staff/com.underground.ug_app.MainActivity} with LAUNCH_SINGLE_TOP from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+10-31 13:21:36.097   524  2698 D CoreBackPreview: Window{6f3e465 u0 Splash Screen com.underground.staff}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ab67eb7, mPriority=0, mIsAnimationCallback=false}
+10-31 13:21:36.206   524   554 I ActivityManager: Start proc 2910:com.underground.staff/u0a192 for next-top-activity {com.underground.staff/com.underground.ug_app.MainActivity}
+10-31 13:21:36.264  2771  2771 I AndroidRuntime: VM exiting with result code 0.
+10-31 13:21:36.272   524   541 V WindowManager: Sent Transition #6 createdAt=10-31 13:21:36.061 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.underground.staff/com.underground.ug_app.MainActivity } baseActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} topActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} origActivity=null realActivity=ComponentInfo{com.underground.staff/com.underground.ug_app.MainActivity} numActivities=1 lastActiveTime=42231 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{4e3af67 Task{d424056 #8 type=standard I=com.underground.staff/com.underground.ug_app.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{50d4114 com.underground.ug_app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+10-31 13:21:36.273   524   541 V WindowManager:     info={id=6 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{4e3af67 Task{d424056 #8 type=standard I=com.underground.staff/com.underground.ug_app.MainActivity}}} m=OPEN f=NONE leash=Surface(name=Task=8)/@0x538458b sb=Rect(0, 0 - 320, 640) eb=Rect(0, 0 - 320, 640) d=0},{WCT{RemoteToken{bf1db03 Task{271084f #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0xe5bd86a sb=Rect(0, 0 - 320, 640) eb=Rect(0, 0 - 320, 640) d=0}]}
+10-31 13:21:36.934  2910  2910 D nativeloader: Configuring clns-6 for other apk /data/app/~~wGyI-r9msDdCWiplIKDGYw==/com.underground.staff-7Zz3PVBKihn8RTy5FROciA==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~wGyI-r9msDdCWiplIKDGYw==/com.underground.staff-7Zz3PVBKihn8RTy5FROciA==/lib/x86_64:/data/app/~~wGyI-r9msDdCWiplIKDGYw==/com.underground.staff-7Zz3PVBKihn8RTy5FROciA==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.underground.staff
+10-31 13:21:36.940  2910  2910 V GraphicsEnvironment: ANGLE GameManagerService for com.underground.staff: false
+10-31 13:21:36.940  2910  2910 V GraphicsEnvironment: com.underground.staff is not listed in per-application setting
+10-31 13:21:37.247  2910  2910 W derground.staff: type=1400 audit(0.0:18): avc:  denied  { read } for  name="max_map_count" dev="proc" ino=54311 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_max_map_count:s0 tclass=file permissive=0 app=com.underground.staff
+10-31 13:21:37.255  2910  2910 I flutter : [IMPORTANT:flutter/shell/common/shell.cc(528)] [Action Required]: Impeller opt-out deprecated.
+10-31 13:21:37.255  2910  2910 I flutter :     The application opted out of Impeller by either using the
+10-31 13:21:37.255  2910  2910 I flutter :     `--no-enable-impeller` flag or the
+10-31 13:21:37.255  2910  2910 I flutter :     `io.flutter.embedding.android.EnableImpeller` `AndroidManifest.xml` entry.
+10-31 13:21:37.255  2910  2910 I flutter :     These options are going to go away in an upcoming Flutter release. Remove
+10-31 13:21:37.255  2910  2910 I flutter :     the explicit opt-out. If you need to opt-out, please report a bug describing
+10-31 13:21:37.255  2910  2910 I flutter :     the issue.
+10-31 13:21:37.255  2910  2910 I flutter : 
+10-31 13:21:37.255  2910  2910 I flutter :     https://github.com/flutter/flutter/issues/new?template=02_bug.yml
+10-31 13:21:37.255  2910  2910 I flutter : 
+10-31 13:21:37.447   524  2548 D CoreBackPreview: Window{5a6950f u0 com.underground.staff/com.underground.ug_app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@438a491, mPriority=0, mIsAnimationCallback=false}
+10-31 13:21:38.101   842   842 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.underground.staff, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+10-31 13:21:38.173   524   808 I SdkSandboxManager: No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10192, mPackageName='com.underground.staff, mAppProcessToken='null'}
+10-31 13:21:38.965   524  1219 D CoreBackPreview: Window{6f3e465 u0 Splash Screen com.underground.staff EXITING}: Setting back callback null
+10-31 13:21:38.966   524  2612 I ImeTracker: com.underground.staff:c736c6c9: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+10-31 13:21:38.967   524  2612 I ImeTracker: com.underground.staff:c736c6c9: onCancelled at PHASE_SERVER_SHOULD_HIDE
+10-31 13:21:38.968   524  1958 W InputManager-JNI: Input channel object '6f3e465 Splash Screen com.underground.staff (client)' was disposed without first being removed with the input manager!
+10-31 13:21:38.980  1570  1570 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=com.underground.staff fieldId=0 fieldName=null extras=null}, false)
+10-31 13:21:39.150  2910  2910 D nativeloader: Configuring clns-7 for other apk . target_sdk_version=36, uses_libraries=, library_path=/data/app/~~wGyI-r9msDdCWiplIKDGYw==/com.underground.staff-7Zz3PVBKihn8RTy5FROciA==/lib/x86_64:/data/app/~~wGyI-r9msDdCWiplIKDGYw==/com.underground.staff-7Zz3PVBKihn8RTy5FROciA==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.underground.staff
+10-31 13:21:39.177   524   541 I ActivityTaskManager: Displayed com.underground.staff/com.underground.ug_app.MainActivity for user 0: +2s892ms
+10-31 13:21:39.177   524   541 I ActivityTaskManager: Fully drawn com.underground.staff/com.underground.ug_app.MainActivity: +2s892ms
+10-31 13:21:39.392   524  2059 D CoreBackPreview: Window{5a6950f u0 com.underground.staff/com.underground.ug_app.MainActivity}: Setting back callback null
+10-31 13:21:39.398   524  2056 W InputManager-JNI: Input channel object '5a6950f com.underground.staff/com.underground.ug_app.MainActivity (client)' was disposed without first being removed with the input manager!
+10-31 13:21:39.412  2910  2910 I flutter : [IMPORTANT:flutter/shell/common/shell.cc(528)] [Action Required]: Impeller opt-out deprecated.
+10-31 13:21:39.412  2910  2910 I flutter :     The application opted out of Impeller by either using the
+10-31 13:21:39.412  2910  2910 I flutter :     `--no-enable-impeller` flag or the
+10-31 13:21:39.412  2910  2910 I flutter :     `io.flutter.embedding.android.EnableImpeller` `AndroidManifest.xml` entry.
+10-31 13:21:39.412  2910  2910 I flutter :     These options are going to go away in an upcoming Flutter release. Remove
+10-31 13:21:39.412  2910  2910 I flutter :     the explicit opt-out. If you need to opt-out, please report a bug describing
+10-31 13:21:39.412  2910  2910 I flutter :     the issue.
+10-31 13:21:39.412  2910  2910 I flutter : 
+10-31 13:21:39.412  2910  2910 I flutter :     https://github.com/flutter/flutter/issues/new?template=02_bug.yml
+10-31 13:21:39.412  2910  2910 I flutter : 
+10-31 13:21:39.526   524  1958 D CoreBackPreview: Window{b7fba7 u0 com.underground.staff/com.underground.ug_app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6583fbb, mPriority=0, mIsAnimationCallback=false}
+10-31 13:21:40.001  1049  1049 D CarrierSvcBindHelper: onPackageAdded: com.underground.staff
+10-31 13:21:40.202   524  2064 I WindowManager: finishDrawing of relaunch: Window{b7fba7 u0 com.underground.staff/com.underground.ug_app.MainActivity} 1054ms
+10-31 13:21:40.231   524   602 I ImeTracker: com.underground.staff:f227df3b: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+10-31 13:21:40.232   524   602 I ImeTracker: com.underground.staff:f227df3b: onCancelled at PHASE_SERVER_SHOULD_HIDE
+10-31 13:21:40.233  1570  1570 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=com.underground.staff fieldId=0 fieldName=null extras=null}, false)
+10-31 13:21:40.254  1049  1345 D ImsResolver: maybeAddedImsService, packageName: com.underground.staff
+10-31 13:21:40.498  1049  1049 D CarrierSvcBindHelper: onPackageModified: com.underground.staff
+10-31 13:21:40.501  1049  1345 D ImsResolver: maybeAddedImsService, packageName: com.underground.staff
+10-31 13:21:42.949  2910  3516 D ProfileInstaller: Installing profile for com.underground.staff
+10-31 13:21:43.141  1659  2795 W AiAiAutofill: java.lang.SecurityException: caller is not user's Augmented Autofill Service
+10-31 13:21:43.147  1659  2924 W AiAiAutofill: java.lang.SecurityException: caller is not user's Augmented Autofill Service
+10-31 13:21:43.877  1659  1659 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.underground.staff], userId:[0], reason:[package is added.].
+10-31 13:21:44.340  1659  1659 I AiAiEcho: AppFetcherImpl onPackageChanged com.underground.staff.
+10-31 13:21:44.341  1659  2789 I AiAiEcho: AppIndexer Package:[com.underground.staff] UserProfile:[0] Enabled:[true].
+10-31 13:21:44.341  1659  2789 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.underground.staff], userId:[0], reason:[package is updated.].
+10-31 13:21:47.655  1659  2220 W AiAiAutofill: java.lang.SecurityException: caller is not user's Augmented Autofill Service
+10-31 13:21:54.985  1486  3762 I BlockstoreStorage: Clearing Blockstore Data for package com.underground.staff [CONTEXT service_id=258 ]
