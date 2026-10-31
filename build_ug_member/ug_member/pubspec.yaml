@@ -1,0 +1,27 @@
+name: ug_member
+description: UNDERGROUND member app
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: any
+  url_launcher: ^6.3.0
+  ota_update: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
